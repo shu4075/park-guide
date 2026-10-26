@@ -87,9 +87,12 @@ function distanceMeters(lat1, lng1, lat2, lng2) {
 // ---------- 2 & 4. 位置を受け取って、近くのスポットを判定 ----------
 let meMarker = null;    // 自分の位置の青い点
 let meAccuracy = null;  // GPSの誤差の円
+let lastPos = null;     // 最後にわかった自分の位置（一覧を近い順に並べるのに使う）
 const inside = new Set(); // 今、範囲の中にいるスポット（同じ通知を何度も出さないため）
 
 function updatePosition(lat, lng, accuracy) {
+  lastPos = { lat: lat, lng: lng };
+
   // 自分の位置を地図に描く
   if (!meMarker) {
     meAccuracy = L.circle([lat, lng], { radius: accuracy, color: "#2d8cff", weight: 1, fillOpacity: 0.1 }).addTo(map);
@@ -126,7 +129,75 @@ function updatePosition(lat, lng, accuracy) {
   if (nearest) {
     setStatus("いちばん近いスポット：" + nearest.name + "（約" + Math.round(nearestDist) + "m）");
   }
+
+  if (listOpen) renderList(); // 一覧を開いていたら、並び順と距離を更新
 }
+
+
+// ---------- スポット一覧 ----------
+const listEl = document.getElementById("list");
+const btnList = document.getElementById("btn-list");
+let listOpen = false;
+
+// 距離を読みやすい形にする（例：85m、1.2km）
+function formatDistance(m) {
+  if (m < 1000) return "約" + Math.round(m) + "m";
+  return "約" + (m / 1000).toFixed(1) + "km";
+}
+
+function renderList() {
+  // 各スポットに「自分からの距離」をつける（位置がまだわからなければ null）
+  const items = SPOTS.map(function (spot) {
+    const d = lastPos ? distanceMeters(lastPos.lat, lastPos.lng, spot.lat, spot.lng) : null;
+    return { spot: spot, d: d };
+  });
+
+  // 位置がわかっていれば近い順に並べる
+  if (lastPos) {
+    items.sort(function (a, b) { return a.d - b.d; });
+  }
+
+  document.getElementById("list-note").textContent = lastPos
+    ? "近い順に並んでいます。タップすると読めます"
+    : "現在地がわかると近い順に並びます（デモでは地図をタップ、またはGPSをオン）";
+
+  const ul = document.getElementById("list-items");
+  ul.innerHTML = ""; // いったん空にして作り直す
+
+  items.forEach(function (item) {
+    const cat = CATEGORY[item.spot.category];
+
+    const btn = document.createElement("button");
+    btn.className = "list-item";
+
+    const badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = cat.label;
+    badge.style.background = cat.color;
+
+    const name = document.createElement("span");
+    name.className = "list-name";
+    name.textContent = item.spot.name;
+
+    const dist = document.createElement("span");
+    dist.className = "list-dist";
+    dist.textContent = item.d === null ? "" : formatDistance(item.d);
+
+    btn.append(badge, name, dist);
+    btn.addEventListener("click", function () { showCard(item.spot); });
+
+    const li = document.createElement("li");
+    li.appendChild(btn);
+    ul.appendChild(li);
+  });
+}
+
+btnList.addEventListener("click", function () {
+  listOpen = !listOpen;
+  listEl.classList.toggle("hidden", !listOpen);
+  btnList.textContent = listOpen ? "地図" : "一覧";
+  if (listOpen) renderList();
+});
 
 
 // ---------- カードの表示 ----------

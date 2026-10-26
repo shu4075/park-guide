@@ -28,7 +28,19 @@ body {
   color: #fff;
   z-index: 1000;
 }
-.title { font-weight: 700; font-size: 16px; }
+.topbar { gap: 8px; }
+.title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis; /* 狭い画面では、入りきらない部分を「…」にする */
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 16px;
+}
+.mode, .view-toggle { white-space: nowrap; } /* ボタンの文字を折り返さない */
+@media (max-width: 400px) {
+  .tag { display: none; } /* 狭いスマホでは「試作版」の札を隠して、タイトルを読めるようにする */
+}
 .tag {
   margin-left: 6px;
   padding: 2px 6px;
@@ -49,9 +61,49 @@ body {
   font-weight: 600;
 }
 .mode.active { background: #fff; color: #1f2333; }
+.actions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
+.view-toggle {
+  border: 1px solid #4a5068;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
 
-/* ---------- 地図 ---------- */
+/* ---------- 地図と一覧（一覧は地図の上に重ねる） ---------- */
+.main { flex: 1; position: relative; display: flex; flex-direction: column; }
 #map { flex: 1; }
+
+.list {
+  position: absolute;
+  inset: 0;               /* 地図と同じ大きさに広げる */
+  z-index: 1000;          /* 地図より上に表示 */
+  overflow-y: auto;       /* 長くなったらスクロール */
+  background: #f4f5f9;
+  padding: 12px 12px 140px; /* 下はカードに隠れないように余白 */
+}
+.list-note { margin: 0 4px 10px; font-size: 13px; color: #7a7f95; }
+.list-items { list-style: none; margin: 0; padding: 0; }
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(20, 24, 40, 0.08);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+.list-item .badge { flex-shrink: 0; }
+.list-name { flex: 1; font-size: 15px; font-weight: 600; }
+.list-dist { flex-shrink: 0; font-size: 13px; color: #7a7f95; }
 
 /* ---------- 状態表示 ---------- */
 .status {

@@ -25,14 +25,26 @@
   <!-- 上のバー：タイトルとモード切り替え -->
   <header class="topbar">
     <div class="title">パークさんぽガイド<span class="tag">試作版</span></div>
-    <div class="modes">
-      <button id="btn-demo" class="mode active">デモ</button>
-      <button id="btn-gps" class="mode">GPS</button>
+    <div class="actions">
+      <!-- 地図と一覧の切り替え -->
+      <button id="btn-list" class="view-toggle">一覧</button>
+      <div class="modes">
+        <button id="btn-demo" class="mode active">デモ</button>
+        <button id="btn-gps" class="mode">GPS</button>
+      </div>
     </div>
   </header>
 
-  <!-- 地図がここに表示される -->
-  <div id="map"></div>
+  <main class="main">
+    <!-- 地図がここに表示される -->
+    <div id="map"></div>
+
+    <!-- スポット一覧（地図の上に重ねて表示する） -->
+    <section id="list" class="list hidden">
+      <p id="list-note" class="list-note"></p>
+      <ul id="list-items" class="list-items"></ul>
+    </section>
+  </main>
 
   <!-- 今の状態（いちばん近いスポットまでの距離など） -->
   <div id="status" class="status">地図をタップすると、そこに「自分」が移動します</div>
