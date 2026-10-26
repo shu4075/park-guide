@@ -105,7 +105,9 @@ let lastPos = null;     // 最後にわかった自分の位置（一覧を近�
 const inside = new Set(); // 今、範囲の中にいるスポット（同じ通知を何度も出さないため）
 
 function updatePosition(lat, lng, accuracy) {
-  lastPos = { lat: lat, lng: lng };
+  // accuracy … GPSの誤差（m）。「本当の位置は、この半径の円のどこか」という意味
+  lastPos = { lat: lat, lng: lng, accuracy: accuracy, time: new Date() };
+  updateCount++;
 
   // 自分の位置を地図に描く
   if (!meMarker) {
@@ -145,6 +147,7 @@ function updatePosition(lat, lng, accuracy) {
   }
 
   if (listOpen) renderList(); // 一覧を開いていたら、並び順と距離を更新
+  if (debugOn) renderDebug(); // デバッグ表示も更新
 }
 
 
@@ -227,6 +230,92 @@ btnList.addEventListener("click", function () {
   listEl.classList.toggle("hidden", !listOpen);
   btnList.textContent = listOpen ? "地図" : "一覧";
   if (listOpen) renderList();
+});
+
+
+// ---------- デバッグ表示（パークでの実地テスト用） ----------
+// GPSの誤差や、各スポットまでの距離を画面に出して、
+// 「座標や半径が合っているか」をその場で確かめられるようにする
+const debugEl = document.getElementById("debug");
+const btnDebug = document.getElementById("btn-debug");
+const ACCURACY_WARN = 30; // 誤差がこれ（m）より大きいと黄色で注意を出す
+let updateCount = 0;      // 位置を受け取った回数（GPSが動いているかの目安）
+let debugOn = loadDebugSetting();
+
+// ON/OFF はこの端末に覚えておく（アプリを開き直しても続く）
+function loadDebugSetting() {
+  try {
+    return localStorage.getItem("debug") === "on";
+  } catch (e) {
+    return false;
+  }
+}
+function saveDebugSetting() {
+  try {
+    localStorage.setItem("debug", debugOn ? "on" : "off");
+  } catch (e) { /* 保存できなくても続行 */ }
+}
+
+// 12:34:56 のような時刻の文字にする
+function formatTime(date) {
+  return date.toTimeString().slice(0, 8);
+}
+
+// 1行分の要素を作る小さな道具
+function makeEl(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  el.textContent = text;
+  return el;
+}
+
+function renderDebug() {
+  const info = document.getElementById("debug-info");
+  const ul = document.getElementById("debug-spots");
+  info.innerHTML = "";
+  ul.innerHTML = "";
+
+  info.appendChild(makeEl("div", "", "モード：" + (mode === "gps" ? "GPS" : "デモ") + "　受信回数：" + updateCount));
+
+  if (!lastPos) {
+    info.appendChild(makeEl("div", "", "位置はまだありません"));
+    return;
+  }
+
+  const acc = Math.round(lastPos.accuracy);
+  info.appendChild(makeEl("div", acc > ACCURACY_WARN ? "warn" : "",
+    "誤差：±" + acc + "m" + (acc > ACCURACY_WARN ? "（大きめ。判定がずれるかも）" : "")));
+  info.appendChild(makeEl("div", "", "位置：" + lastPos.lat.toFixed(6) + ", " + lastPos.lng.toFixed(6)));
+  info.appendChild(makeEl("div", "", "更新：" + formatTime(lastPos.time)));
+
+  // 各スポットまでの距離を近い順に。「距離 / 反応する半径」で、範囲の中なら「圏内」
+  SPOTS
+    .map(function (spot) {
+      return { spot: spot, d: distanceMeters(lastPos.lat, lastPos.lng, spot.lat, spot.lng) };
+    })
+    .sort(function (a, b) { return a.d - b.d; })
+    .forEach(function (item) {
+      const isIn = item.d <= item.spot.radius;
+      const li = document.createElement("li");
+      li.append(
+        makeEl("span", "name", item.spot.name),
+        makeEl("span", "", Math.round(item.d) + "m / " + item.spot.radius + "m"),
+        makeEl("span", isIn ? "in" : "", isIn ? "圏内" : "　　")
+      );
+      ul.appendChild(li);
+    });
+}
+
+function applyDebug() {
+  debugEl.classList.toggle("hidden", !debugOn);
+  btnDebug.classList.toggle("on", debugOn);
+  if (debugOn) renderDebug();
+}
+
+btnDebug.addEventListener("click", function () {
+  debugOn = !debugOn;
+  saveDebugSetting();
+  applyDebug();
 });
 
 
@@ -331,6 +420,7 @@ btnDemo.addEventListener("click", function () {
   btnDemo.classList.add("active");
   btnGps.classList.remove("active");
   setStatus("地図をタップすると、そこに「自分」が移動します");
+  if (debugOn) renderDebug();
 });
 
 btnGps.addEventListener("click", function () {
@@ -338,7 +428,12 @@ btnGps.addEventListener("click", function () {
   btnGps.classList.add("active");
   btnDemo.classList.remove("active");
   startGps();
+  if (debugOn) renderDebug();
 });
+
+// 開いたときに、デバッグ表示の前回の ON/OFF を反映
+// （mode などの準備が全部終わったここで呼ぶ）
+applyDebug();
 
 
 // ---------- オフライン対応（Service Worker の登録） ----------

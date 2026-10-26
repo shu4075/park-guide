@@ -39,6 +39,12 @@
     <!-- 地図がここに表示される -->
     <div id="map"></div>
 
+    <!-- 実地テスト用のデバッグ表示（GPSの誤差、各スポットまでの距離） -->
+    <section id="debug" class="debug hidden" aria-label="デバッグ表示">
+      <div id="debug-info"></div>
+      <ul id="debug-spots" class="debug-spots"></ul>
+    </section>
+
     <!-- スポット一覧（地図の上に重ねて表示する） -->
     <section id="list" class="list hidden">
       <!-- 隠れミッキーの進捗（文字と横長のバー） -->
@@ -68,7 +74,11 @@
     <p id="card-progress" class="card-progress hidden"></p>
   </section>
 
-  <footer class="notice">非公式ファンサイトです。運営会社とは関係ありません。</footer>
+  <footer class="notice">
+    非公式ファンサイトです。運営会社とは関係ありません。
+    <!-- 実地テストのときだけ使うので、目立たない場所に置く -->
+    <button id="btn-debug" class="debug-toggle">デバッグ</button>
+  </footer>
 
   <!-- 読み込む順番が大事：Leaflet → スポットのデータ → 動きのプログラム -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
