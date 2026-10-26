@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>パークさんぽガイド（仮）</title>
+
+  <!-- 地図ライブラリ Leaflet の見た目 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- このサイト独自の見た目 -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 上のバー：タイトルとモード切り替え -->
+  <header class="topbar">
+    <div class="title">パークさんぽガイド<span class="tag">試作版</span></div>
+    <div class="modes">
+      <button id="btn-demo" class="mode active">デモ</button>
+      <button id="btn-gps" class="mode">GPS</button>
+    </div>
+  </header>
+
+  <!-- 地図がここに表示される -->
+  <div id="map"></div>
+
+  <!-- 今の状態（いちばん近いスポットまでの距離など） -->
+  <div id="status" class="status">地図をタップすると、そこに「自分」が移動します</div>
+
+  <!-- スポットに近づいたときに出てくるカード -->
+  <section id="card" class="card hidden" aria-live="polite">
+    <button id="card-close" class="close" aria-label="閉じる">×</button>
+    <div class="badges">
+      <span id="card-category" class="badge"></span>
+      <span id="card-source" class="badge sub"></span>
+    </div>
+    <h2 id="card-title"></h2>
+    <p id="card-body"></p>
+    <button id="card-found" class="found hidden">見つけた！</button>
+  </section>
+
+  <footer class="notice">非公式ファンサイトです。運営会社とは関係ありません。</footer>
+
+  <!-- 読み込む順番が大事：Leaflet → スポットのデータ → 動きのプログラム -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="spots.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

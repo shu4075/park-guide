@@ -1,0 +1,129 @@
+/* =====================================================
+   style.css … 見た目の設定
+   ===================================================== */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  color: #1f2333;
+  background: #f4f5f9;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 上のバー ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  padding-top: calc(10px + env(safe-area-inset-top));
+  background: #1f2333;
+  color: #fff;
+  z-index: 1000;
+}
+.title { font-weight: 700; font-size: 16px; }
+.tag {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #ffd166;
+  color: #1f2333;
+  font-size: 11px;
+  vertical-align: middle;
+}
+.modes { display: flex; gap: 4px; background: #33384d; padding: 3px; border-radius: 8px; }
+.mode {
+  border: 0;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: transparent;
+  color: #c9cce0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.mode.active { background: #fff; color: #1f2333; }
+
+/* ---------- 地図 ---------- */
+#map { flex: 1; }
+
+/* ---------- 状態表示 ---------- */
+.status {
+  padding: 10px 16px;
+  background: #fff;
+  border-top: 1px solid #e3e5ee;
+  font-size: 14px;
+}
+
+/* ---------- お知らせ ---------- */
+.notice {
+  padding: 6px 16px;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  background: #fff;
+  color: #7a7f95;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* ---------- スポットのカード ---------- */
+.card {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px 18px 18px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(20, 24, 40, 0.25);
+  z-index: 1001;
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.card h2 { margin: 8px 0 6px; font-size: 18px; }
+.card p  { margin: 0; line-height: 1.7; font-size: 15px; }
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  color: #7a7f95;
+}
+
+.badges { display: flex; gap: 6px; }
+.badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge.sub { background: #e9ecf5; color: #4a5068; }
+.badge.sub.theory { background: #fff1d6; color: #9a6200; }
+
+.found {
+  margin-top: 14px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #e17055;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.hidden { display: none; }
