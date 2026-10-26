@@ -3,18 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>パークさんぽガイド（仮）</title>
+  <title>パークさんぽガイド</title>
 
   <!-- ホーム画面に追加したときの名前・アイコン・色（PWA） -->
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1f2333">
+  <meta name="theme-color" content="#f3ead8">
   <link rel="icon" href="icons/icon-192.png">
   <!-- iPhone用：ホーム画面のアイコンと、アプリのように全画面で開く設定 -->
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="さんぽガイド">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+  <!-- 見出しに使う明朝体（Google Fonts）。読み込めないときは端末の明朝体になる -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&display=swap">
   <!-- 地図ライブラリ Leaflet の見た目 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <!-- このサイト独自の見た目 -->
@@ -24,7 +28,7 @@
 
   <!-- 上のバー：タイトルとモード切り替え -->
   <header class="topbar">
-    <div class="title">パークさんぽガイド<span class="tag">試作版</span></div>
+    <div class="title">パークさんぽガイド</div>
     <div class="actions">
       <!-- 地図と一覧の切り替え -->
       <button id="btn-list" class="view-toggle">一覧</button>
@@ -54,6 +58,19 @@
       </div>
       <p id="list-note" class="list-note"></p>
       <ul id="list-items" class="list-items"></ul>
+
+      <!-- ネタの投稿（フォームに送ってもらい、確認してから載せる） -->
+      <section class="submit">
+        <h3>ネタを投稿する</h3>
+        <p>知っているBGSや小ネタ、見つけた隠れミッキーを教えてください。内容を確かめてから、このガイドに載せます。</p>
+        <ul class="submit-rules">
+          <li>本や他のサイトの文章は写さず、自分の言葉で</li>
+          <li>どこで知ったか（出典）も書く</li>
+          <li>写真は自分で撮ったものだけ</li>
+        </ul>
+        <a id="submit-link" class="btn primary hidden" target="_blank" rel="noopener">投稿フォームを開く</a>
+        <p id="submit-unready" class="submit-unready">投稿フォームは準備中です</p>
+      </section>
     </section>
   </main>
 
@@ -68,8 +85,48 @@
       <span id="card-source" class="badge sub"></span>
     </div>
     <h2 id="card-title"></h2>
+
+    <!-- スポットの写真（spots.js に image があるときだけ） -->
+    <figure id="card-figure" class="photo hidden">
+      <img id="card-image" alt="">
+      <figcaption id="card-caption"></figcaption>
+    </figure>
+
     <p id="card-body"></p>
-    <button id="card-found" class="found hidden">見つけた！</button>
+
+    <!-- 隠れミッキー：答え合わせのボタン -->
+    <div id="card-actions" class="card-actions hidden">
+      <button id="card-photo" class="btn primary">写真で答え合わせ</button>
+      <button id="card-found" class="btn">見つけた！</button>
+    </div>
+    <!-- 写真を撮る（スマホではカメラが開く）。見えない部品で、ボタンから呼び出す -->
+    <input id="photo-input" type="file" accept="image/*" capture="environment" hidden>
+
+    <!-- 撮った写真と正解の写真を並べる -->
+    <div id="compare" class="compare hidden">
+      <div class="compare-pair">
+        <figure class="photo">
+          <img id="compare-mine" alt="あなたが撮った写真">
+          <figcaption>あなたの写真</figcaption>
+        </figure>
+        <figure class="photo">
+          <img id="compare-answer" alt="正解の写真">
+          <figcaption>正解</figcaption>
+        </figure>
+      </div>
+      <p class="compare-question">同じ場所でしたか？</p>
+      <div class="card-actions">
+        <button id="compare-yes" class="btn primary">合ってた！</button>
+        <button id="compare-retry" class="btn">撮り直す</button>
+      </div>
+    </div>
+
+    <!-- 見つけたあと：自分が撮った写真 -->
+    <figure id="card-myphoto" class="photo hidden">
+      <img id="card-myphoto-img" alt="あなたが撮った写真">
+      <figcaption>あなたが撮った写真</figcaption>
+    </figure>
+
     <!-- 隠れミッキーのカードだけに出す進捗 -->
     <p id="card-progress" class="card-progress hidden"></p>
   </section>

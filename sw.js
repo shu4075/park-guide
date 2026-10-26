@@ -9,7 +9,7 @@
 
 
 // ファイルを大きく変えたら、この番号を上げる（古いキャッシュが消える）
-const CACHE_NAME = "park-guide-v1";
+const CACHE_NAME = "park-guide-v2";
 
 // オフラインでも使いたいファイルの一覧
 const APP_FILES = [
@@ -68,7 +68,7 @@ self.addEventListener("fetch", function (event) {
         // 裏で最新版を取りに行き、取れたらしまい直す
         const fromNetwork = fetch(request)
           .then(function (response) {
-            if (response.ok && isAppFile(request.url)) {
+            if (response.ok && shouldCache(request.url)) {
               cache.put(request, response.clone());
             }
             return response;
@@ -82,9 +82,28 @@ self.addEventListener("fetch", function (event) {
   );
 });
 
-// APP_FILES に入っているファイルかどうか
-function isAppFile(url) {
-  return APP_FILES.some(function (file) {
+// しまっておくファイルかどうか
+//   - APP_FILES に入っているファイル
+//   - このサイトの中のファイル（images フォルダの写真など。一度見たものだけしまう）
+//   - 見出しの明朝体（Google Fonts）
+function shouldCache(url) {
+  const isAppFile = APP_FILES.some(function (file) {
     return url === new URL(file, self.registration.scope).href;
   });
+  const isOwnFile = url.indexOf(self.registration.scope) === 0;
+  const isFont = url.indexOf("https://fonts.googleapis.com/") === 0 ||
+                 url.indexOf("https://fonts.gstatic.com/") === 0;
+  return isAppFile || isOwnFile || isFont;
 }
+
+
+// ---------- 通知をタップしたとき：アプリを前に出す ----------
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+      if (list.length > 0) return list[0].focus();
+      return self.clients.openWindow(self.registration.scope);
+    })
+  );
+});

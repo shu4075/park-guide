@@ -13,10 +13,14 @@ const PARK_CENTER = [35.6329, 139.8804]; // 最初に表示する地図の中心
 const START_ZOOM = 17;                    // 最初の拡大率（大きいほど拡大）
 const LEAVE_MARGIN = 10;                  // 範囲から「出た」と判定するための余裕（m）
 
+// ネタ投稿フォーム（Googleフォーム）のURL。作ったらここに貼る。空のあいだは「準備中」と出る
+const SUBMIT_FORM_URL = "";
+
+// 色は style.css の --bgs / --hidden / --trivia と同じにしておく
 const CATEGORY = {
-  bgs:    { label: "裏設定",       color: "#6c5ce7" },
-  hidden: { label: "隠れミッキー", color: "#e17055" },
-  trivia: { label: "小ネタ",       color: "#00a884" }
+  bgs:    { label: "BGS",          color: "#2f4a7a" },
+  hidden: { label: "隠れミッキー", color: "#b5452f" },
+  trivia: { label: "小ネタ",       color: "#5b7a3a" }
 };
 const SOURCE = {
   official: "公式設定",
@@ -140,6 +144,7 @@ function updatePosition(lat, lng, accuracy) {
     entered.sort(function (a, b) { return a.d - b.d; });
     showCard(entered[0].spot);
     if (navigator.vibrate) navigator.vibrate(200); // 対応端末なら振動（iPhoneは非対応）
+    if (mode === "gps") notifyNearby(entered[0].spot); // 端末の通知も出す（音で気づける）
   }
 
   if (nearest) {
@@ -196,7 +201,7 @@ function renderList() {
     const badge = document.createElement("span");
     badge.className = "badge";
     badge.textContent = cat.label;
-    badge.style.background = cat.color;
+    badge.style.setProperty("--c", cat.color);
 
     const name = document.createElement("span");
     name.className = "list-name";
@@ -223,6 +228,14 @@ function renderList() {
     li.appendChild(btn);
     ul.appendChild(li);
   });
+}
+
+// 投稿フォームのURLが設定されていれば、ボタンを出す
+if (SUBMIT_FORM_URL) {
+  const link = document.getElementById("submit-link");
+  link.href = SUBMIT_FORM_URL;
+  link.classList.remove("hidden");
+  document.getElementById("submit-unready").classList.add("hidden");
 }
 
 btnList.addEventListener("click", function () {
@@ -330,7 +343,7 @@ function showCard(spot) {
 
   const catEl = document.getElementById("card-category");
   catEl.textContent = cat.label;
-  catEl.style.background = cat.color;
+  catEl.style.setProperty("--c", cat.color); // 札の色（style.css の var(--c) で使う）
 
   const srcEl = document.getElementById("card-source");
   srcEl.textContent = SOURCE[spot.source];
@@ -341,7 +354,26 @@ function showCard(spot) {
   // 隠れミッキーで、まだ見つけていなければ「ヒント」だけ見せる
   const isHiddenUnfound = spot.category === "hidden" && !found.has(spot.id);
   document.getElementById("card-body").textContent = isHiddenUnfound ? spot.hint : spot.body;
-  foundBtn.classList.toggle("hidden", !isHiddenUnfound);
+
+  // スポットの写真（隠れミッキーは答えがばれないよう、見つけるまで出さない）
+  const figure = document.getElementById("card-figure");
+  if (spot.image && !isHiddenUnfound) {
+    document.getElementById("card-image").src = spot.image;
+    document.getElementById("card-caption").textContent = spot.imageCaption || "";
+    figure.classList.remove("hidden");
+  } else {
+    figure.classList.add("hidden");
+  }
+
+  // 答え合わせのボタン：正解の写真があれば「写真で答え合わせ」を主役にする
+  document.getElementById("card-actions").classList.toggle("hidden", !isHiddenUnfound);
+  photoBtn.classList.toggle("hidden", !spot.answerImage);
+  foundBtn.textContent = spot.answerImage ? "写真なしで答えを見る" : "見つけた！";
+  foundBtn.classList.toggle("primary", !spot.answerImage);
+  compareEl.classList.add("hidden");
+
+  // 見つけたあとは、自分が撮った写真を出す（撮っていなければ出さない）
+  showMyPhoto(spot);
 
   // 隠れミッキーのカードには、進捗も出す
   const progressEl = document.getElementById("card-progress");
@@ -351,13 +383,126 @@ function showCard(spot) {
   card.classList.remove("hidden");
 }
 
-foundBtn.addEventListener("click", function () {
-  if (!currentSpot) return;
-  found.add(currentSpot.id);
+// 見つけたことにする（「見つけた！」「合ってた！」の両方から使う）
+function markFound(spot) {
+  found.add(spot.id);
   saveFound();
-  showCard(currentSpot); // 答えと、増えた進捗を表示し直す
+  showCard(spot);             // 答えと、増えた進捗を表示し直す
   if (listOpen) renderList(); // 一覧の進捗と「発見済み」も更新
+}
+
+foundBtn.addEventListener("click", function () {
+  if (currentSpot) markFound(currentSpot);
 });
+
+
+// ---------- 隠れミッキーの写真で答え合わせ ----------
+// 流れ：カメラで撮る → 撮った写真と正解の写真を並べる → 自分で「合ってた！」を押す
+const photoBtn = document.getElementById("card-photo");
+const photoInput = document.getElementById("photo-input");
+const compareEl = document.getElementById("compare");
+let pendingPhoto = null; // 撮ったけれど、まだ「合ってた！」を押していない写真
+
+photoBtn.addEventListener("click", function () {
+  photoInput.value = ""; // 同じ写真を選び直しても反応するように空にする
+  photoInput.click();    // 見えない <input type="file"> を押したことにする → カメラが開く
+});
+document.getElementById("compare-retry").addEventListener("click", function () {
+  photoInput.value = "";
+  photoInput.click();
+});
+
+photoInput.addEventListener("change", function () {
+  const file = photoInput.files[0];
+  if (!file || !currentSpot) return;
+
+  // スマホの写真は大きいので、保存する前に小さくする
+  shrinkPhoto(file, 1000).then(function (blob) {
+    pendingPhoto = blob;
+    setImageFromBlob(document.getElementById("compare-mine"), blob);
+    document.getElementById("compare-answer").src = currentSpot.answerImage;
+    document.getElementById("card-actions").classList.add("hidden");
+    compareEl.classList.remove("hidden");
+  });
+});
+
+document.getElementById("compare-yes").addEventListener("click", function () {
+  if (!currentSpot || !pendingPhoto) return;
+  const spot = currentSpot;
+  savePhoto(spot.id, pendingPhoto).finally(function () {
+    pendingPhoto = null;
+    markFound(spot);
+  });
+});
+
+// 写真を、長い辺が maxSize px になるまで縮めて JPEG にする
+function shrinkPhoto(file, maxSize) {
+  return new Promise(function (resolve) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function () {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function (blob) { resolve(blob || file); }, "image/jpeg", 0.8);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
+// Blob（写真のデータ）を <img> に表示する
+function setImageFromBlob(imgEl, blob) {
+  if (imgEl.dataset.url) URL.revokeObjectURL(imgEl.dataset.url); // 前の写真の分を片付ける
+  imgEl.dataset.url = URL.createObjectURL(blob);
+  imgEl.src = imgEl.dataset.url;
+}
+
+function showMyPhoto(spot) {
+  const fig = document.getElementById("card-myphoto");
+  fig.classList.add("hidden");
+  if (spot.category !== "hidden" || !found.has(spot.id)) return;
+  loadPhoto(spot.id).then(function (blob) {
+    if (!blob || currentSpot !== spot) return; // 読み込み中に別のカードに変わっていたら出さない
+    setImageFromBlob(document.getElementById("card-myphoto-img"), blob);
+    fig.classList.remove("hidden");
+  });
+}
+
+
+// ---------- 撮った写真の保存（IndexedDB） ----------
+// 写真は大きいので localStorage（5MBくらいまで）ではなく、
+// 大きなデータを入れられる「IndexedDB」という端末内のデータベースに入れる
+function openPhotoDB() {
+  return new Promise(function (resolve, reject) {
+    const req = indexedDB.open("park-guide", 1);
+    req.onupgradeneeded = function () { req.result.createObjectStore("photos"); }; // 初回だけ棚を作る
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error); };
+  });
+}
+function savePhoto(id, blob) {
+  return openPhotoDB().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      const tx = db.transaction("photos", "readwrite");
+      tx.objectStore("photos").put(blob, id);
+      tx.oncomplete = function () { resolve(); };
+      tx.onerror = function () { reject(tx.error); };
+    });
+  }).catch(function () { /* 保存できなくても続行 */ });
+}
+function loadPhoto(id) {
+  return openPhotoDB().then(function (db) {
+    return new Promise(function (resolve) {
+      const req = db.transaction("photos").objectStore("photos").get(id);
+      req.onsuccess = function () { resolve(req.result || null); };
+      req.onerror = function () { resolve(null); };
+    });
+  }).catch(function () { return null; });
+}
 
 document.getElementById("card-close").addEventListener("click", function () {
   card.classList.add("hidden");
@@ -388,6 +533,7 @@ function startGps() {
     return;
   }
   setStatus("現在地を取得中…");
+  askNotificationPermission();
   watchId = navigator.geolocation.watchPosition(
     function (pos) {
       updatePosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
@@ -402,6 +548,32 @@ function startGps() {
     },
     { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
   );
+}
+
+// ---------- 範囲に入ったときの通知 ----------
+// 注意：Webサイトの通知は「アプリを開いている間」しか出せない
+//       （画面を消したり、別のアプリに切り替えたりすると GPS も止まるため）
+// iPhone は「ホーム画面に追加」したアプリからでないと通知が使えない（iOS 16.4 以降）
+
+// 通知を出してよいか、最初の1回だけ聞く（GPSボタンを押したときに呼ぶ）
+function askNotificationPermission() {
+  if (!("Notification" in window)) return; // 通知が使えない環境（iPhoneのSafariのタブなど）
+  if (Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function notifyNearby(spot) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  if (!("serviceWorker" in navigator)) return;
+  // 通知は Service Worker から出す（Android の Chrome はこの方法しか受け付けない）
+  navigator.serviceWorker.ready.then(function (reg) {
+    reg.showNotification("近くに" + CATEGORY[spot.category].label + "があります", {
+      body: spot.name + "　立ち止まって読んでみてください",
+      icon: "icons/icon-192.png",
+      tag: spot.id // 同じスポットの通知は1つにまとめる
+    });
+  }).catch(function () { /* 通知できなくても続行 */ });
 }
 
 function stopGps() {
