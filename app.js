@@ -14,7 +14,7 @@ const START_ZOOM = 17;                    // 最初の拡大率（大きいほ�
 const LEAVE_MARGIN = 10;                  // 範囲から「出た」と判定するための余裕（m）
 
 // ネタ投稿フォーム（Googleフォーム）のURL。作ったらここに貼る。空のあいだは「準備中」と出る
-const SUBMIT_FORM_URL = "";
+const SUBMIT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdr7NfbE_rhEpXQCxitHDnj_TjymBwOxM5hxLAieCPCsdjFmw/viewform";
 
 // 色は style.css の --bgs / --hidden / --trivia と同じにしておく
 const CATEGORY = {
