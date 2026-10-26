@@ -131,6 +131,18 @@
     <p id="card-progress" class="card-progress hidden"></p>
   </section>
 
+  <!-- アプリ内カメラ（隠れミッキーの答え合わせで使う。画面いっぱいに出す） -->
+  <section id="camera" class="camera hidden" aria-label="カメラ">
+    <!-- playsinline：iPhoneで勝手に全画面再生にならないように -->
+    <video id="camera-video" playsinline muted></video>
+    <p class="camera-hint">隠れミッキーが写るように撮ってください</p>
+    <div class="camera-bar">
+      <button id="camera-cancel" class="camera-text-btn">やめる</button>
+      <button id="camera-shutter" class="shutter" aria-label="撮影"></button>
+      <button id="camera-album" class="camera-text-btn">別の方法</button>
+    </div>
+  </section>
+
   <footer class="notice">
     非公式ファンサイトです。運営会社とは関係ありません。
     <!-- 実地テストのときだけ使うので、目立たない場所に置く -->

@@ -403,27 +403,94 @@ const photoInput = document.getElementById("photo-input");
 const compareEl = document.getElementById("compare");
 let pendingPhoto = null; // 撮ったけれど、まだ「合ってた！」を押していない写真
 
-photoBtn.addEventListener("click", function () {
+photoBtn.addEventListener("click", openCamera);
+document.getElementById("compare-retry").addEventListener("click", openCamera);
+
+// 写真が撮れたら（アプリ内カメラ・端末のカメラのどちらからでも）ここに来る
+function handlePhoto(blob) {
+  if (!currentSpot) return;
+  pendingPhoto = blob;
+  setImageFromBlob(document.getElementById("compare-mine"), blob);
+  document.getElementById("compare-answer").src = currentSpot.answerImage;
+  document.getElementById("card-actions").classList.add("hidden");
+  compareEl.classList.remove("hidden");
+}
+
+// 予備：アプリ内カメラが使えないときは、端末のカメラアプリで撮る
+function openSystemCamera() {
   photoInput.value = ""; // 同じ写真を選び直しても反応するように空にする
   photoInput.click();    // 見えない <input type="file"> を押したことにする → カメラが開く
-});
-document.getElementById("compare-retry").addEventListener("click", function () {
-  photoInput.value = "";
-  photoInput.click();
-});
-
+}
 photoInput.addEventListener("change", function () {
   const file = photoInput.files[0];
-  if (!file || !currentSpot) return;
-
+  if (!file) return;
   // スマホの写真は大きいので、保存する前に小さくする
-  shrinkPhoto(file, 1000).then(function (blob) {
-    pendingPhoto = blob;
-    setImageFromBlob(document.getElementById("compare-mine"), blob);
-    document.getElementById("compare-answer").src = currentSpot.answerImage;
-    document.getElementById("card-actions").classList.add("hidden");
-    compareEl.classList.remove("hidden");
+  shrinkPhoto(file, 1000).then(handlePhoto);
+});
+
+
+// ---------- アプリ内カメラ ----------
+// getUserMedia … ブラウザからカメラの映像を受け取る仕組み。
+// 映像を <video> に流して見せ、シャッターを押した瞬間の1コマを <canvas> に写し取って写真にする
+const cameraEl = document.getElementById("camera");
+const cameraVideo = document.getElementById("camera-video");
+let cameraStream = null; // カメラの映像の流れ（使い終わったら必ず止める）
+
+function openCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    openSystemCamera(); // 古いブラウザなど
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: "environment" } }, // スマホの外側（背面）のカメラ
+    audio: false
+  }).then(function (stream) {
+    cameraStream = stream;
+    // 電話がかかってきた等でカメラが途中で止まったら、真っ黒な画面のままにしない
+    stream.getVideoTracks().forEach(function (track) {
+      track.addEventListener("ended", closeCamera);
+    });
+    cameraVideo.srcObject = stream;
+    cameraEl.classList.remove("hidden");
+    return cameraVideo.play();
+  }).catch(function () {
+    // カメラの許可がない・カメラがない など → 端末のカメラアプリで撮る
+    closeCamera();
+    openSystemCamera();
   });
+}
+
+function closeCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(function (track) { track.stop(); }); // カメラを止める（ランプも消える）
+    cameraStream = null;
+  }
+  cameraVideo.srcObject = null;
+  cameraEl.classList.add("hidden");
+}
+
+document.getElementById("camera-shutter").addEventListener("click", function () {
+  const w = cameraVideo.videoWidth;
+  const h = cameraVideo.videoHeight;
+  if (!w || !h) return; // まだ映像が来ていない
+
+  // 長い辺が 1000px になるように縮めて、今の1コマを写し取る
+  const scale = Math.min(1, 1000 / Math.max(w, h));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(w * scale);
+  canvas.height = Math.round(h * scale);
+  canvas.getContext("2d").drawImage(cameraVideo, 0, 0, canvas.width, canvas.height);
+
+  closeCamera();
+  canvas.toBlob(function (blob) {
+    if (blob) handlePhoto(blob);
+  }, "image/jpeg", 0.8);
+});
+
+document.getElementById("camera-cancel").addEventListener("click", closeCamera);
+document.getElementById("camera-album").addEventListener("click", function () {
+  closeCamera();
+  openSystemCamera();
 });
 
 document.getElementById("compare-yes").addEventListener("click", function () {

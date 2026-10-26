@@ -253,6 +253,53 @@ button { font-family: inherit; cursor: pointer; }
 .card-progress { margin: 10px 0 0; font-size: 13px; color: var(--ink-soft); }
 .card .card-progress { font-family: var(--sans); font-size: 12px; line-height: 1.5; }
 
+/* ---------- アプリ内カメラ ---------- */
+.camera {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;           /* いちばん上に出す */
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+.camera video { flex: 1; width: 100%; min-height: 0; object-fit: cover; }
+.camera-hint {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  margin: 0;
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.camera-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  background: #000;
+}
+.camera-text-btn {
+  width: 80px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+}
+/* シャッター：白い丸を白い輪で囲む */
+.shutter {
+  width: 70px;
+  height: 70px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 4px #000;
+}
+.shutter:active { transform: scale(0.94); }
+
 /* ---------- デバッグ表示（実地テスト用） ---------- */
 .debug-toggle {
   margin-left: 6px;
