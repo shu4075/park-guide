@@ -85,6 +85,24 @@ body {
   padding: 12px 12px 140px; /* 下はカードに隠れないように余白 */
 }
 .list-note { margin: 0 4px 10px; font-size: 13px; color: #7a7f95; }
+
+/* 隠れミッキーの進捗 */
+.progress {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+}
+.progress-text { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+.progress-bar { height: 8px; border-radius: 999px; background: #f1e3de; overflow: hidden; }
+.progress-fill {
+  width: 0;               /* 見つけた割合に合わせて app.js で幅を変える */
+  height: 100%;
+  border-radius: 999px;
+  background: #e17055;
+  transition: width 0.3s ease-out;
+}
+.list-found { flex-shrink: 0; font-size: 12px; font-weight: 700; color: #e17055; }
 .list-items { list-style: none; margin: 0; padding: 0; }
 .list-item {
   display: flex;
@@ -177,5 +195,7 @@ body {
   font-size: 16px;
   font-weight: 700;
 }
+
+.card-progress { margin: 10px 0 0; font-size: 13px; color: #7a7f95; }
 
 .hidden { display: none; }

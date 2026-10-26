@@ -41,6 +41,11 @@
 
     <!-- スポット一覧（地図の上に重ねて表示する） -->
     <section id="list" class="list hidden">
+      <!-- 隠れミッキーの進捗（文字と横長のバー） -->
+      <div class="progress">
+        <p id="list-progress" class="progress-text"></p>
+        <div class="progress-bar"><div id="list-progress-fill" class="progress-fill"></div></div>
+      </div>
       <p id="list-note" class="list-note"></p>
       <ul id="list-items" class="list-items"></ul>
     </section>
@@ -59,6 +64,8 @@
     <h2 id="card-title"></h2>
     <p id="card-body"></p>
     <button id="card-found" class="found hidden">見つけた！</button>
+    <!-- 隠れミッキーのカードだけに出す進捗 -->
+    <p id="card-progress" class="card-progress hidden"></p>
   </section>
 
   <footer class="notice">非公式ファンサイトです。運営会社とは関係ありません。</footer>

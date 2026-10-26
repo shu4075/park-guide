@@ -70,6 +70,20 @@ function saveFound() {
 }
 const found = loadFound();
 
+// 隠れミッキーの進捗（全部で何個あって、何個見つけたか）
+// found には、あとでデータから消したスポットのIDが残っていることがあるので、
+// 「今の SPOTS にある隠れミッキー」だけを数える
+function hiddenProgress() {
+  const hiddenSpots = SPOTS.filter(function (spot) { return spot.category === "hidden"; });
+  const foundCount = hiddenSpots.filter(function (spot) { return found.has(spot.id); }).length;
+  return { found: foundCount, total: hiddenSpots.length };
+}
+
+function progressText() {
+  const p = hiddenProgress();
+  return "隠れミッキー " + p.total + "個中 " + p.found + "個発見";
+}
+
 
 // ---------- 3. 距離の計算 ----------
 // 緯度経度の2点間の距離（メートル）。地球を球として計算する「ハバーサイン公式」
@@ -157,6 +171,12 @@ function renderList() {
     items.sort(function (a, b) { return a.d - b.d; });
   }
 
+  // 進捗：文字と、バーの幅（見つけた割合を % にする）
+  const p = hiddenProgress();
+  document.getElementById("list-progress").textContent = progressText();
+  document.getElementById("list-progress-fill").style.width =
+    (p.total > 0 ? p.found / p.total * 100 : 0) + "%";
+
   document.getElementById("list-note").textContent = lastPos
     ? "近い順に並んでいます。タップすると読めます"
     : "現在地がわかると近い順に並びます（デモでは地図をタップ、またはGPSをオン）";
@@ -183,7 +203,17 @@ function renderList() {
     dist.className = "list-dist";
     dist.textContent = item.d === null ? "" : formatDistance(item.d);
 
-    btn.append(badge, name, dist);
+    btn.append(badge, name);
+
+    // 見つけた隠れミッキーには「発見済み」の印をつける
+    if (item.spot.category === "hidden" && found.has(item.spot.id)) {
+      const mark = document.createElement("span");
+      mark.className = "list-found";
+      mark.textContent = "発見済み";
+      btn.append(mark);
+    }
+
+    btn.append(dist);
     btn.addEventListener("click", function () { showCard(item.spot); });
 
     const li = document.createElement("li");
@@ -224,6 +254,11 @@ function showCard(spot) {
   document.getElementById("card-body").textContent = isHiddenUnfound ? spot.hint : spot.body;
   foundBtn.classList.toggle("hidden", !isHiddenUnfound);
 
+  // 隠れミッキーのカードには、進捗も出す
+  const progressEl = document.getElementById("card-progress");
+  progressEl.textContent = progressText();
+  progressEl.classList.toggle("hidden", spot.category !== "hidden");
+
   card.classList.remove("hidden");
 }
 
@@ -231,7 +266,8 @@ foundBtn.addEventListener("click", function () {
   if (!currentSpot) return;
   found.add(currentSpot.id);
   saveFound();
-  showCard(currentSpot); // 答えを表示し直す
+  showCard(currentSpot); // 答えと、増えた進捗を表示し直す
+  if (listOpen) renderList(); // 一覧の進捗と「発見済み」も更新
 });
 
 document.getElementById("card-close").addEventListener("click", function () {
