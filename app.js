@@ -232,3 +232,12 @@ btnGps.addEventListener("click", function () {
   btnDemo.classList.remove("active");
   startGps();
 });
+
+
+// ---------- オフライン対応（Service Worker の登録） ----------
+// sw.js を「門番」として登録する。対応していないブラウザでは何もしない
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(function (e) {
+    console.warn("Service Worker を登録できませんでした", e);
+  });
+}
