@@ -20,12 +20,52 @@ const SUBMIT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdr7NfbE_rhEpX
 const CATEGORY = {
   bgs:    { label: "BGS",          color: "#2f4a7a" },
   hidden: { label: "隠れミッキー", color: "#b5452f" },
-  trivia: { label: "小ネタ",       color: "#5b7a3a" }
+  trivia: { label: "小ネタ",       color: "#5b7a3a" },
+  food:   { label: "おすすめメニュー", color: "#9a6b1f" }
 };
 const SOURCE = {
-  official: "公式設定",
+  official: "公式情報",
   theory:   "諸説あり"
 };
+
+
+// ---------- 位置の直し（位置編集モードで直して、この端末に保存したもの） ----------
+// spots.js の値を「元の値」として覚えてから、直した値で上書きする
+const ORIGINAL = {}; // スポットID → spots.js に書いてある lat / lng / radius
+SPOTS.forEach(function (spot) {
+  ORIGINAL[spot.id] = { lat: spot.lat, lng: spot.lng, radius: spot.radius };
+});
+
+function loadEdits() {
+  try {
+    return JSON.parse(localStorage.getItem("spotEdits") || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+function saveEdits() {
+  try {
+    localStorage.setItem("spotEdits", JSON.stringify(spotEdits));
+  } catch (e) { /* 保存できなくても続行 */ }
+}
+function sameValues(a, b) {
+  return a && b && a.lat === b.lat && a.lng === b.lng && a.radius === b.radius;
+}
+
+const spotEdits = loadEdits();
+SPOTS.forEach(function (spot) {
+  const edit = spotEdits[spot.id];
+  if (!edit) return;
+  // 直したあとに spots.js のほうが書き換えられていたら（＝直しを書き写し済み）、端末の直しは捨てる
+  if (!sameValues(edit.base, ORIGINAL[spot.id])) {
+    delete spotEdits[spot.id];
+    return;
+  }
+  spot.lat = edit.lat;
+  spot.lng = edit.lng;
+  spot.radius = edit.radius;
+});
+saveEdits();
 
 
 // ---------- 1. 地図を表示 ----------
@@ -37,17 +77,19 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 }).addTo(map);
 
 // スポットを地図に描く（反応する範囲の円＋中心の点）
+// あとで位置編集モードで動かせるように、描いた円と点を spotLayers に覚えておく
+const spotLayers = {}; // スポットID → { circle, dot }
 SPOTS.forEach(function (spot) {
   const color = CATEGORY[spot.category].color;
 
-  L.circle([spot.lat, spot.lng], {
+  const circle = L.circle([spot.lat, spot.lng], {
     radius: spot.radius,
     color: color,
     weight: 1,
     fillOpacity: 0.12
   }).addTo(map);
 
-  L.circleMarker([spot.lat, spot.lng], {
+  const dot = L.circleMarker([spot.lat, spot.lng], {
     radius: 7,
     color: "#fff",
     weight: 2,
@@ -56,6 +98,8 @@ SPOTS.forEach(function (spot) {
   })
     .addTo(map)
     .on("click", function () { showCard(spot); }); // 点をタップしても読める
+
+  spotLayers[spot.id] = { circle: circle, dot: dot };
 });
 
 
@@ -346,8 +390,9 @@ function showCard(spot) {
   catEl.style.setProperty("--c", cat.color); // 札の色（style.css の var(--c) で使う）
 
   const srcEl = document.getElementById("card-source");
-  srcEl.textContent = SOURCE[spot.source];
+  srcEl.textContent = SOURCE[spot.source] || "";
   srcEl.classList.toggle("theory", spot.source === "theory");
+  srcEl.classList.toggle("hidden", !spot.source); // おすすめメニューなど、source がなければ札を出さない
 
   document.getElementById("card-title").textContent = spot.name;
 
@@ -669,6 +714,172 @@ btnGps.addEventListener("click", function () {
   startGps();
   if (debugOn) renderDebug();
 });
+
+// ---------- 位置編集モード ----------
+// パークでスポットの位置と半径を直すためのモード。
+//   - 地図の「◎」をドラッグすると、そのスポットが動く
+//   - 「今いる場所にする」で、GPSの現在地をスポットの位置にする
+//   - 直した値はこの端末に保存され（上の spotEdits）、「コピー」で spots.js 用の文字にできる
+const editBar = document.getElementById("editbar");
+const btnEdit = document.getElementById("btn-edit");
+let editOn = false;
+let editSpot = null;   // 今選んでいるスポット
+let editHandles = [];  // ドラッグ用の「◎」
+
+function round6(n) {
+  return Math.round(n * 1000000) / 1000000; // 小数点以下6桁（約10cm単位）で十分
+}
+
+// スポットを動かして、地図の円と点もついてこさせる
+function moveSpot(spot, lat, lng) {
+  spot.lat = round6(lat);
+  spot.lng = round6(lng);
+  spotLayers[spot.id].circle.setLatLng([spot.lat, spot.lng]);
+  spotLayers[spot.id].dot.setLatLng([spot.lat, spot.lng]);
+}
+
+// 直した値を端末に保存する。spots.js と同じ値に戻ったら、直しは消す
+function saveSpotEdit(spot) {
+  const now = { lat: spot.lat, lng: spot.lng, radius: spot.radius };
+  if (sameValues(now, ORIGINAL[spot.id])) {
+    delete spotEdits[spot.id];
+  } else {
+    now.base = ORIGINAL[spot.id]; // どの spots.js の値をもとに直したか
+    spotEdits[spot.id] = now;
+  }
+  saveEdits();
+  renderEditBar();
+  inside.delete(spot.id); // 動かしたので、範囲の判定をやり直す
+  if (debugOn) renderDebug();
+  if (listOpen) renderList();
+}
+
+function renderEditBar() {
+  const count = Object.keys(spotEdits).length;
+  document.getElementById("edit-copy").textContent = "直した内容をコピー（" + count + "件）";
+
+  const controls = document.getElementById("edit-controls");
+  if (!editSpot) {
+    document.getElementById("edit-target").textContent = "地図の ◎ をタップして選ぶか、ドラッグして動かします";
+    controls.classList.add("hidden");
+    return;
+  }
+  const edited = spotEdits[editSpot.id] ? "（直し中）" : "";
+  document.getElementById("edit-target").textContent = editSpot.name + edited;
+  document.getElementById("edit-values").textContent =
+    "緯度 " + editSpot.lat + "　経度 " + editSpot.lng + "　半径 " + editSpot.radius + "m";
+  controls.classList.remove("hidden");
+}
+
+function selectEditSpot(spot) {
+  editSpot = spot;
+  renderEditBar();
+}
+
+function startEdit() {
+  editOn = true;
+  btnEdit.classList.add("on");
+  card.classList.add("hidden");
+  if (listOpen) btnList.click(); // 一覧を閉じて地図を出す
+
+  SPOTS.forEach(function (spot) {
+    const handle = L.marker([spot.lat, spot.lng], {
+      draggable: true,
+      icon: L.divIcon({ className: "edit-handle", iconSize: [28, 28] })
+    }).addTo(map);
+    handle.on("click", function () { selectEditSpot(spot); });
+    handle.on("drag", function (e) {
+      const p = e.target.getLatLng();
+      moveSpot(spot, p.lat, p.lng);
+    });
+    handle.on("dragend", function () {
+      selectEditSpot(spot);
+      saveSpotEdit(spot);
+    });
+    spotLayers[spot.id].handle = handle;
+    editHandles.push(handle);
+  });
+
+  editBar.classList.remove("hidden");
+  renderEditBar();
+}
+
+function stopEdit() {
+  editOn = false;
+  editSpot = null;
+  btnEdit.classList.remove("on");
+  editHandles.forEach(function (h) { map.removeLayer(h); });
+  editHandles = [];
+  editBar.classList.add("hidden");
+}
+
+btnEdit.addEventListener("click", function () {
+  if (editOn) stopEdit(); else startEdit();
+});
+document.getElementById("edit-close").addEventListener("click", stopEdit);
+
+// 半径を 5m ずつ変える（5m より小さくはしない）
+function changeRadius(delta) {
+  if (!editSpot) return;
+  editSpot.radius = Math.max(5, editSpot.radius + delta);
+  spotLayers[editSpot.id].circle.setRadius(editSpot.radius);
+  saveSpotEdit(editSpot);
+}
+document.getElementById("edit-radius-down").addEventListener("click", function () { changeRadius(-5); });
+document.getElementById("edit-radius-up").addEventListener("click", function () { changeRadius(5); });
+
+// 今いる場所（GPSモードなら本物の現在地、デモなら最後にタップした場所）をスポットの位置にする
+document.getElementById("edit-here").addEventListener("click", function () {
+  if (!editSpot) return;
+  if (!lastPos) {
+    setStatus("現在地がまだわかりません。GPSをオンにしてください");
+    return;
+  }
+  moveSpot(editSpot, lastPos.lat, lastPos.lng);
+  spotLayers[editSpot.id].handle.setLatLng([editSpot.lat, editSpot.lng]);
+  saveSpotEdit(editSpot);
+});
+
+document.getElementById("edit-reset").addEventListener("click", function () {
+  if (!editSpot) return;
+  const o = ORIGINAL[editSpot.id];
+  editSpot.radius = o.radius;
+  spotLayers[editSpot.id].circle.setRadius(o.radius);
+  moveSpot(editSpot, o.lat, o.lng);
+  spotLayers[editSpot.id].handle.setLatLng([o.lat, o.lng]);
+  saveSpotEdit(editSpot);
+});
+
+// 直したスポットを、spots.js にそのまま書き写せる形の文字にする
+function editsText() {
+  return SPOTS
+    .filter(function (spot) { return spotEdits[spot.id]; })
+    .map(function (spot) {
+      return "// " + spot.name + "（id: \"" + spot.id + "\"）\n" +
+             "    lat: " + spot.lat + ",\n" +
+             "    lng: " + spot.lng + ",\n" +
+             "    radius: " + spot.radius + ",";
+    })
+    .join("\n\n");
+}
+
+document.getElementById("edit-copy").addEventListener("click", function () {
+  const text = editsText();
+  if (!text) {
+    setStatus("まだ直したスポットはありません");
+    return;
+  }
+  // クリップボードにコピー。できない環境では、選んでコピーできる窓を出す
+  const fallback = function () { window.prompt("この文字をコピーしてください", text); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(function () { setStatus("コピーしました。spots.js の同じ id のところに書き写してください"); })
+      .catch(fallback);
+  } else {
+    fallback();
+  }
+});
+
 
 // 開いたときに、デバッグ表示の前回の ON/OFF を反映
 // （mode などの準備が全部終わったここで呼ぶ）

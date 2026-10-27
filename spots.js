@@ -9,7 +9,9 @@
 //              Googleマップで場所を右クリック → 一番上の数字をクリックでコピーできます
 //   radius   … 何メートル以内に入ったら反応するか
 //   category … "bgs"（BGS＝バックグラウンドストーリー） / "hidden"（隠れミッキー） / "trivia"（小ネタ）
-//   source   … "official"（公式設定） / "theory"（諸説あり・ファンの考察）
+//              / "food"（おすすめメニュー）
+//   source   … "official"（公式情報） / "theory"（諸説あり・ファンの考察）
+//              おすすめメニューのような感想には書かない（書かなければ札は出ない）
 //   hint     … 隠れミッキーだけ使う。見つける前に出すヒント
 //   body     … 本文（隠れミッキーの場合は「見つけた！」を押したあとに出る答え）
 //              \n と書くと、そこで改行される（箇条書きにするときに使う）
@@ -24,7 +26,7 @@
 // =====================================================
 
 // 座標は OpenStreetMap の地図データから入れたもの。パークで実地確認して直すこと
-// source は、公式設定か確認できるまで "theory"（諸説あり）にしている
+// 内容は公式ガイドブックで読んだもの（何ページかなどの細かい出典は未整理）
 
 const SPOTS = [
   {
@@ -34,7 +36,7 @@ const SPOTS = [
     lng: 139.8792,
     radius: 50,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "舞浜が選ばれたのは、場所的に雨が少ないから。"
   },
   {
@@ -44,7 +46,7 @@ const SPOTS = [
     lng: 139.8796,
     radius: 60,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "・建物の窓は、上に行くほど小さくなっている。\n・ワールドバザールに屋根があるのは東京だけ。"
   },
   {
@@ -54,8 +56,17 @@ const SPOTS = [
     lng: 139.8811,
     radius: 40,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "・船には、愛人の名前が書かれている。\n・出発するところでは、流れ星が流れる。\n・奥には、香水などが買えるショップがある。"
+  },
+  {
+    id: "cafe-orleans",
+    name: "カフェ・オーリンズ",
+    lat: 35.6342,
+    lng: 139.8812,
+    radius: 30,
+    category: "food",
+    body: "ガンボスープがおいしい。"
   },
   {
     // 位置未確認：地図データに見つからなかったので、アドベンチャーランドの中心に仮置き
@@ -65,7 +76,7 @@ const SPOTS = [
     lng: 139.8814,
     radius: 30,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "時期によって難易度が変わる。"
   },
   {
@@ -75,7 +86,7 @@ const SPOTS = [
     lng: 139.8824,
     radius: 40,
     category: "bgs",
-    source: "theory",
+    source: "official",
     body: "サムは、売り物を3回変えている（生首、像、お守り）。"
   },
   {
@@ -85,7 +96,7 @@ const SPOTS = [
     lng: 139.8822,
     radius: 30,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "椅子が暖かい。"
   },
   {
@@ -96,7 +107,7 @@ const SPOTS = [
     lng: 139.8818,
     radius: 30,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "ツリーハウスの穴から、虎の鳴き声が聞こえる。"
   },
   {
@@ -107,7 +118,7 @@ const SPOTS = [
     lng: 139.8839,
     radius: 30,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "2つのエリアのBGMが混ざらないようにしている。"
   },
   {
@@ -117,7 +128,7 @@ const SPOTS = [
     lng: 139.8824,
     radius: 40,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "・本物の蒸気で走っている。\n・ランドの周辺を歩いていると、汽笛の音が聞こえる。"
   },
   {
@@ -127,7 +138,7 @@ const SPOTS = [
     lng: 139.8833,
     radius: 30,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "ラッキーの的がある。"
   },
   {
@@ -137,7 +148,7 @@ const SPOTS = [
     lng: 139.8835,
     radius: 50,
     category: "trivia",
-    source: "theory",
+    source: "official",
     body: "前にある機関車は、レプリカではなく本物。"
   },
   {

@@ -131,6 +131,27 @@
     <p id="card-progress" class="card-progress hidden"></p>
   </section>
 
+  <!-- 位置編集モード（スポットの位置と半径を、地図の上で直す） -->
+  <section id="editbar" class="editbar hidden" aria-label="位置編集">
+    <p id="edit-target" class="edit-target"></p>
+    <div id="edit-controls" class="hidden">
+      <p id="edit-values" class="edit-values"></p>
+      <div class="edit-row">
+        <button id="edit-radius-down" class="btn">半径 −5m</button>
+        <button id="edit-radius-up" class="btn">半径 ＋5m</button>
+      </div>
+      <div class="edit-row">
+        <button id="edit-here" class="btn">今いる場所にする</button>
+        <button id="edit-reset" class="btn">元に戻す</button>
+      </div>
+    </div>
+    <div class="edit-row">
+      <button id="edit-copy" class="btn primary">直した内容をコピー</button>
+      <button id="edit-close" class="btn">終わる</button>
+    </div>
+    <p class="edit-note">直した位置はこのスマホだけに保存されます。みんなの画面に反映するには、コピーした内容を spots.js に書き写します。</p>
+  </section>
+
   <!-- アプリ内カメラ（隠れミッキーの答え合わせで使う。画面いっぱいに出す） -->
   <section id="camera" class="camera hidden" aria-label="カメラ">
     <!-- playsinline：iPhoneで勝手に全画面再生にならないように -->
@@ -147,6 +168,7 @@
     非公式ファンサイトです。運営会社とは関係ありません。
     <!-- 実地テストのときだけ使うので、目立たない場所に置く -->
     <button id="btn-debug" class="debug-toggle">デバッグ</button>
+    <button id="btn-edit" class="debug-toggle">位置編集</button>
   </footer>
 
   <!-- 読み込む順番が大事：Leaflet → スポットのデータ → 動きのプログラム -->
