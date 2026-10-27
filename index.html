@@ -51,8 +51,14 @@
 
     <!-- スポット一覧（地図の上に重ねて表示する） -->
     <section id="list" class="list hidden">
-      <!-- 隠れミッキーの進捗（文字と横長のバー） -->
-      <div class="progress">
+      <!-- タブ：スポット（BGS・小ネタなど）と隠れミッキーを分けて見せる -->
+      <div class="tabs" role="tablist">
+        <button id="tab-spots" class="tab active" role="tab">スポット</button>
+        <button id="tab-hidden" class="tab" role="tab">隠れミッキー</button>
+      </div>
+
+      <!-- 隠れミッキーの進捗（文字と横長のバー）。隠れミッキーのタブだけに出す -->
+      <div id="list-progress-box" class="progress">
         <p id="list-progress" class="progress-text"></p>
         <div class="progress-bar"><div id="list-progress-fill" class="progress-fill"></div></div>
       </div>
@@ -60,7 +66,7 @@
       <ul id="list-items" class="list-items"></ul>
 
       <!-- ネタの投稿（フォームに送ってもらい、確認してから載せる） -->
-      <section class="submit">
+      <section id="submit-box" class="submit">
         <h3>ネタを投稿する</h3>
         <p>知っているBGSや小ネタ、見つけた隠れミッキーを教えてください。内容を確かめてから、このガイドに載せます。</p>
         <ul class="submit-rules">

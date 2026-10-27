@@ -211,12 +211,25 @@ function formatDistance(m) {
   return "約" + (m / 1000).toFixed(1) + "km";
 }
 
+// 一覧は2つのタブに分ける：「スポット」（BGS・小ネタ・おすすめメニュー）と「隠れミッキー」
+let listTab = "spots";
+
 function renderList() {
-  // 各スポットに「自分からの距離」をつける（位置がまだわからなければ null）
-  const items = SPOTS.map(function (spot) {
-    const d = lastPos ? distanceMeters(lastPos.lat, lastPos.lng, spot.lat, spot.lng) : null;
-    return { spot: spot, d: d };
-  });
+  const showHidden = listTab === "hidden";
+
+  // タブの見た目と、タブごとに出すもの（進捗は隠れミッキー、投稿の案内はスポット）
+  document.getElementById("tab-spots").classList.toggle("active", !showHidden);
+  document.getElementById("tab-hidden").classList.toggle("active", showHidden);
+  document.getElementById("list-progress-box").classList.toggle("hidden", !showHidden);
+  document.getElementById("submit-box").classList.toggle("hidden", showHidden);
+
+  // 今のタブのスポットだけを取り出して、「自分からの距離」をつける（位置がまだわからなければ null）
+  const items = SPOTS
+    .filter(function (spot) { return (spot.category === "hidden") === showHidden; })
+    .map(function (spot) {
+      const d = lastPos ? distanceMeters(lastPos.lat, lastPos.lng, spot.lat, spot.lng) : null;
+      return { spot: spot, d: d };
+    });
 
   // 位置がわかっていれば近い順に並べる
   if (lastPos) {
@@ -229,9 +242,12 @@ function renderList() {
   document.getElementById("list-progress-fill").style.width =
     (p.total > 0 ? p.found / p.total * 100 : 0) + "%";
 
-  document.getElementById("list-note").textContent = lastPos
+  let note = lastPos
     ? "近い順に並んでいます。タップすると読めます"
     : "現在地がわかると近い順に並びます（デモでは地図をタップ、またはGPSをオン）";
+  if (showHidden) note += "。見つけるまでは、ヒントだけが出ます";
+  if (items.length === 0) note = "まだありません";
+  document.getElementById("list-note").textContent = note;
 
   const ul = document.getElementById("list-items");
   ul.innerHTML = ""; // いったん空にして作り直す
@@ -281,6 +297,15 @@ if (SUBMIT_FORM_URL) {
   link.classList.remove("hidden");
   document.getElementById("submit-unready").classList.add("hidden");
 }
+
+document.getElementById("tab-spots").addEventListener("click", function () {
+  listTab = "spots";
+  renderList();
+});
+document.getElementById("tab-hidden").addEventListener("click", function () {
+  listTab = "hidden";
+  renderList();
+});
 
 btnList.addEventListener("click", function () {
   listOpen = !listOpen;

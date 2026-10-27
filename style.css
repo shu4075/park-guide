@@ -118,6 +118,21 @@ button { font-family: inherit; cursor: pointer; }
   transform: rotate(-6deg);
 }
 
+/* タブ：本のインデックスのように、選んでいるほうを下線で示す */
+.tabs { display: flex; margin: -2px 0 14px; border-bottom: 1px solid var(--ink); }
+.tab {
+  flex: 1;
+  padding: 10px 4px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+}
+.tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
 /* 隠れミッキーの進捗 */
 .progress {
   margin-bottom: 14px;
