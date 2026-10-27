@@ -134,7 +134,7 @@ const SPOTS = [
     name: "ウエスタンランド・シューティングギャラリー",
     lat: 35.6326,
     lng: 139.8833,
-    radius: 30,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "ラッキーの的がある。"
@@ -142,9 +142,9 @@ const SPOTS = [
   {
     id: "big-thunder",
     name: "ビッグサンダー・マウンテン",
-    lat: 35.6326,
-    lng: 139.8835,
-    radius: 50,
+    lat: 35.632382,
+    lng: 139.883235,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "・乗り場の横の蒸気トラクターは、レプリカではなく1898年製の本物。持ち主の奥さんが「トラクターより旅行に行きたい」と言ったので、譲ってもらえた。\n・山の高さは33m、コースは1,000m、最高時速は42km。\n・巻き上げの途中でキラキラ光っているのは、金の鉱脈。\n・コースには、オポッサム、コヨーテ、ビッグホーンシープ、コウモリ、ガラガラヘビがいる。\n・山にいる「セドナ・サム」は、カリブの海賊の「チャーリー・サム」の兄弟という設定。\n・セドナ・サムは乗っているときには見えない場所にいて、マークトウェイン号やウエスタンリバー鉄道から見える。"
@@ -152,9 +152,9 @@ const SPOTS = [
   {
     id: "american-river",
     name: "アメリカ河と蒸気船マークトウェイン号",
-    lat: 35.631838,
-    lng: 139.884288,
-    radius: 40,
+    lat: 35.631611,
+    lng: 139.882936,
+    radius: 20,
     category: "trivia",
     source: "official",
     body: "・開園のとき、アメリカのミシシッピ川から汲んできた水が注がれた。\n・マークトウェイン号は法律上の「船」として登録されているので、船体の前と後ろに船名と「浦安市」の表示がある。"
@@ -162,9 +162,9 @@ const SPOTS = [
   {
     id: "tom-sawyer-raft",
     name: "トムソーヤ島いかだ",
-    lat: 35.631928,
-    lng: 139.883747,
-    radius: 20,
+    lat: 35.631941,
+    lng: 139.883726,
+    radius: 15,
     category: "trivia",
     source: "official",
     body: "島が暗くなるので、いかだは日没で運航を終える。"
@@ -172,9 +172,9 @@ const SPOTS = [
   {
     id: "critter-country",
     name: "クリッターカントリー",
-    lat: 35.630577,
-    lng: 139.883465,
-    radius: 40,
+    lat: 35.631268,
+    lng: 139.882432,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "・1992年にできた、6番目のテーマランド。\n・もとはスプラッシュ・マウンテンだけの計画だったが、アメリカのディズニー側の意向で、エリアごと作ることになった。"
@@ -182,9 +182,9 @@ const SPOTS = [
   {
     id: "splash-mountain",
     name: "スプラッシュ・マウンテン",
-    lat: 35.630506,
-    lng: 139.882898,
-    radius: 35,
+    lat: 35.630888,
+    lng: 139.882907,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "・最後の落下は、高さ約16m・傾き45度・時速約62kmで、ランドでいちばん速い。\n・山はもともと「チカピンヒル」という丘。密造酒の蒸留器が爆発してダムが壊れ、「水しぶきの山」と呼ばれるようになった。\n・ランドで水しぶきを浴びるのはここだけ。水の量は日本の気候に合わせて調整している。"
@@ -192,8 +192,8 @@ const SPOTS = [
   {
     id: "cinderella-castle",
     name: "シンデレラ城",
-    lat: 35.632077,
-    lng: 139.880849,
+    lat: 35.632085,
+    lng: 139.880844,
     radius: 40,
     category: "trivia",
     source: "official",
@@ -202,9 +202,9 @@ const SPOTS = [
   {
     id: "haunted-mansion",
     name: "ホーンテッドマンション",
-    lat: 35.630590,
-    lng: 139.882182,
-    radius: 30,
+    lat: 35.631126,
+    lng: 139.88183,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "・屋敷には999人の幽霊がいて、1,000人目の仲間を探している。\n・出口のお墓の名前は、英語のダジャレになっている（例：「Harry After」＝here after）。\n・待ち時間が「4分」「9分」「13分」のような、縁起の悪い数字で表示されることがある。"
@@ -212,9 +212,9 @@ const SPOTS = [
   {
     id: "pooh-hunny-hunt",
     name: "プーさんのハニーハント",
-    lat: 35.630233,
-    lng: 139.880470,
-    radius: 30,
+    lat: 35.630744,
+    lng: 139.880183,
+    radius: 15,
     category: "trivia",
     source: "official",
     body: "・最後の場面では、ハチミツの香りがする。\n・開園記念日の4月15日にオープンする予定だったが、技術的なトラブルで2000年9月1日になった。"
@@ -222,9 +222,9 @@ const SPOTS = [
   {
     id: "mickeys-house",
     name: "ミッキーの家とミート・ミッキー",
-    lat: 35.630250,
-    lng: 139.878615,
-    radius: 25,
+    lat: 35.630203,
+    lng: 139.878821,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "オルガンの楽譜にはミッキーのマークが流れているが、1つだけグーフィーのマークが混ざっている。"
@@ -232,8 +232,8 @@ const SPOTS = [
   {
     id: "tomorrowland",
     name: "トゥモローランド",
-    lat: 35.632893,
-    lng: 139.878326,
+    lat: 35.633065,
+    lng: 139.878355,
     radius: 40,
     category: "trivia",
     source: "official",
@@ -242,9 +242,9 @@ const SPOTS = [
   {
     id: "small-world",
     name: "イッツ・ア・スモールワールド",
-    lat: 35.630695,
-    lng: 139.880967,
-    radius: 30,
+    lat: 35.6308,
+    lng: 139.880885,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "・入口の時計塔は15分ごとにからくりが動き、世界の子どもの人形が出てきて時刻を知らせる。\n・2018年のリニューアルで、ディズニー映画18作品のキャラクター約40体が仲間入りした。"
@@ -252,9 +252,9 @@ const SPOTS = [
   {
     id: "philharmagic",
     name: "ミッキーのフィルハーマジック",
-    lat: 35.631495,
-    lng: 139.880641,
-    radius: 25,
+    lat: 35.631497,
+    lng: 139.88091,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "待ち列の壁の楽譜は「ミッキーマウス・マーチ」、大きな五線譜は「魔法使いの弟子」。"
@@ -282,9 +282,9 @@ const SPOTS = [
   {
     id: "gadgets-go-coaster",
     name: "ガジェットのゴーコースター",
-    lat: 35.630556,
-    lng: 139.878698,
-    radius: 25,
+    lat: 35.630582,
+    lng: 139.878711,
+    radius: 15,
     category: "bgs",
     source: "official",
     body: "ガラクタを集めて作ったという設定なので、日用品っぽい部品があちこちに使われている。"
@@ -292,9 +292,9 @@ const SPOTS = [
   {
     id: "monsters-inc",
     name: "モンスターズ・インク“ライド＆ゴーシーク！”",
-    lat: 35.633926,
-    lng: 139.878324,
-    radius: 35,
+    lat: 35.633876,
+    lng: 139.87853,
+    radius: 25,
     category: "trivia",
     source: "official",
     body: "・オレンジの毛でヘルメットをかぶった、このアトラクションだけのモンスター「ロッキー」が、いろいろな場面に隠れている。\n・映画では足しか映らなかった大きなモンスター「テッド」の全身が、街の中に出てくる。"
