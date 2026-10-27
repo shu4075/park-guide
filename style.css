@@ -188,6 +188,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .card h2 { margin: 10px 0 8px; font-family: var(--serif); font-size: 20px; line-height: 1.4; }
 .card p  { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.9; }
+#card-body { white-space: pre-line; } /* spots.js の \n で改行して、箇条書きにできる */
 
 .close {
   position: absolute;
