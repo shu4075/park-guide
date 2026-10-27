@@ -81,6 +81,23 @@ button { font-family: inherit; cursor: pointer; }
 /* 地図の色を少しだけセピアに寄せて、紙になじませる */
 .leaflet-tile-pane { filter: sepia(0.25) saturate(0.85); }
 
+/* 画面を消さないスイッチ（地図の左下、ランド／シー切り替えの上） */
+.screen-toggle {
+  position: absolute;
+  left: 10px;
+  bottom: 54px;
+  z-index: 800;
+  padding: 6px 10px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.18);
+}
+.screen-toggle.on { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
+
 /* 方位の目印（地図の右上）。app.js が北の方向に回す */
 .compass {
   position: absolute;

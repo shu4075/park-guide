@@ -938,6 +938,80 @@ document.getElementById("edit-copy").addEventListener("click", function () {
 });
 
 
+// ---------- 画面を消さない（Wake Lock） ----------
+// スマホは、しばらく触らないと画面が自動で消える。画面が消えると GPS も止まって通知も来ない。
+// Wake Lock（ウェイクロック）は「この画面を消さないで」とスマホに頼む仕組み。
+// ただし、アプリを閉じたり別のアプリに切り替えたりすると、スマホが自動で解除する。
+// そのため、アプリに戻ってきたときにもう一度頼み直す。
+const btnScreen = document.getElementById("btn-screen");
+let screenWanted = loadScreenSetting(); // 利用者がONにしているか
+let wakeLock = null;                    // スマホから受け取った「消さない約束」
+
+function loadScreenSetting() {
+  try {
+    return localStorage.getItem("keepScreenOn") === "on";
+  } catch (e) {
+    return false;
+  }
+}
+function saveScreenSetting() {
+  try {
+    localStorage.setItem("keepScreenOn", screenWanted ? "on" : "off");
+  } catch (e) { /* 保存できなくても続行 */ }
+}
+
+function renderScreenButton() {
+  const on = screenWanted && wakeLock !== null;
+  btnScreen.textContent = "画面を消さない：" + (on ? "ON" : "OFF");
+  btnScreen.classList.toggle("on", on);
+  btnScreen.setAttribute("aria-pressed", on ? "true" : "false");
+}
+
+function requestWakeLock() {
+  if (!screenWanted || wakeLock || document.visibilityState !== "visible") return;
+  navigator.wakeLock.request("screen").then(function (lock) {
+    wakeLock = lock;
+    // スマホの都合で解除されたとき（アプリを切り替えた等）
+    lock.addEventListener("release", function () {
+      wakeLock = null;
+      renderScreenButton();
+    });
+    renderScreenButton();
+  }).catch(function () {
+    // 電池残量が少ない・省電力モード などで断られることがある。
+    // 断られたら OFF に戻す（ボタンの表示と設定を食い違わせない）
+    wakeLock = null;
+    screenWanted = false;
+    saveScreenSetting();
+    renderScreenButton();
+    setStatus("画面を消さない設定ができませんでした（省電力モードなどを確認してください）");
+  });
+}
+
+function releaseWakeLock() {
+  if (wakeLock) wakeLock.release(); // release イベントで wakeLock が null に戻る
+}
+
+if ("wakeLock" in navigator) {
+  btnScreen.classList.remove("hidden");
+  btnScreen.addEventListener("click", function () {
+    screenWanted = !screenWanted;
+    saveScreenSetting();
+    if (screenWanted) {
+      requestWakeLock();
+      setStatus("画面を消さないようにしました。電池の減りが早くなるので、使わないときはOFFにしてください");
+    } else {
+      releaseWakeLock();
+    }
+    renderScreenButton();
+  });
+  // アプリに戻ってきたら、頼み直す
+  document.addEventListener("visibilitychange", requestWakeLock);
+  requestWakeLock(); // 前回ONにしていたら、開いたときにもう一度頼む
+  renderScreenButton();
+}
+
+
 // 開いたときに、デバッグ表示の前回の ON/OFF を反映
 // （mode などの準備が全部終わったここで呼ぶ）
 applyDebug();
