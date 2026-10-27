@@ -11,6 +11,14 @@
 // ---------- 設定 ----------
 const PARK_CENTER = [35.6329, 139.8804]; // 最初に表示する地図の中心（ランド）
 const SEA_CENTER = [35.6262, 139.8850];  // シーの中心（プロメテウス火山のあたり）
+
+// 地図の向き（公式マップに合わせて、入口が下になるように回す）
+//   数字は「画面の上に来る方角」（北=0、東=90、南=180、西=270）
+//   ランド：メインエントランス → シンデレラ城 の方角が上
+//   シー  ：エントランス → プロメテウス火山 の方角が上
+// 向きが少し違うと思ったら、この数字を変える
+const LAND_BEARING = 156;
+const SEA_BEARING = 245;
 const START_ZOOM = 17;                    // 最初の拡大率（大きいほど拡大）
 const LEAVE_MARGIN = 10;                  // 範囲から「出た」と判定するための余裕（m）
 
@@ -70,7 +78,20 @@ saveEdits();
 
 
 // ---------- 1. 地図を表示 ----------
-const map = L.map("map", { zoomControl: false }).setView(PARK_CENTER, START_ZOOM);
+const map = L.map("map", {
+  zoomControl: false,
+  rotate: true,          // 地図の回転を使う（leaflet-rotate）
+  touchRotate: false,    // 2本指でうっかり回ってしまわないようにする
+  rotateControl: false   // 回転用のボタンは出さない（代わりに右上の N で方位を示す）
+}).setView(PARK_CENTER, START_ZOOM);
+
+// 地図を回して、右上の「N」を北の方向に向ける
+function setMapBearing(bearing) {
+  if (typeof map.setBearing !== "function") return; // 回転の部品が読み込めなかったときは回さない
+  map.setBearing(-bearing); // leaflet-rotate は「地図を回す角度」なので、上に来る方角の逆向きに回す
+  document.getElementById("compass").style.transform = "rotate(" + (-bearing) + "deg)";
+}
+setMapBearing(LAND_BEARING);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -109,6 +130,7 @@ let showingSea = false;
 btnPark.addEventListener("click", function () {
   showingSea = !showingSea;
   map.setView(showingSea ? SEA_CENTER : PARK_CENTER, START_ZOOM);
+  setMapBearing(showingSea ? SEA_BEARING : LAND_BEARING);
   btnPark.textContent = showingSea ? "ランドへ" : "シーへ";
 });
 

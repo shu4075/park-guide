@@ -44,6 +44,8 @@
     <div id="map"></div>
     <!-- ランドとシーの切り替え（地図の表示場所を移す） -->
     <button id="btn-park" class="park-toggle">シーへ</button>
+    <!-- 方位の目印（地図を回しているので、北がどちらかを示す） -->
+    <div id="compass" class="compass" aria-label="北の方向"><span>N</span></div>
 
     <!-- 実地テスト用のデバッグ表示（GPSの誤差、各スポットまでの距離） -->
     <section id="debug" class="debug hidden" aria-label="デバッグ表示">
@@ -181,6 +183,8 @@
 
   <!-- 読み込む順番が大事：Leaflet → スポットのデータ → 動きのプログラム -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- 地図を回転させる追加部品（公式マップと同じ向きにするため） -->
+  <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
   <script src="spots.js"></script>
   <script src="app.js"></script>
 </body>

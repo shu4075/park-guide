@@ -9,7 +9,7 @@
 
 
 // ファイルを大きく変えたら、この番号を上げる（古いキャッシュが消える）
-const CACHE_NAME = "park-guide-v2";
+const CACHE_NAME = "park-guide-v3";
 
 // オフラインでも使いたいファイルの一覧
 const APP_FILES = [
@@ -23,7 +23,8 @@ const APP_FILES = [
   "icons/icon-512.png",
   "icons/apple-touch-icon.png",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
-  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+  "https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"
 ];
 
 
