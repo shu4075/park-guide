@@ -32,9 +32,9 @@ const SPOTS = [
   {
     id: "main-entrance",
     name: "メインエントランス",
-    lat: 35.6350,
-    lng: 139.8792,
-    radius: 50,
+    lat: 35.635304,
+    lng: 139.879029,
+    radius: 40,
     category: "trivia",
     source: "official",
     body: "舞浜が選ばれたのは、場所的に雨が少ないから。"
@@ -42,9 +42,9 @@ const SPOTS = [
   {
     id: "world-bazaar",
     name: "ワールドバザール",
-    lat: 35.6343,
-    lng: 139.8796,
-    radius: 60,
+    lat: 35.634615,
+    lng: 139.879437,
+    radius: 25,
     category: "trivia",
     source: "official",
     body: "・建物の窓は、上に行くほど小さくなっている。\n・ワールドバザールに屋根があるのは東京だけ。"
@@ -52,9 +52,9 @@ const SPOTS = [
   {
     id: "pirates",
     name: "カリブの海賊",
-    lat: 35.6348,
-    lng: 139.8811,
-    radius: 40,
+    lat: 35.634305,
+    lng: 139.880676,
+    radius: 20,
     category: "trivia",
     source: "official",
     body: "・船には、愛人の名前が書かれている。\n・出発するところでは、流れ星が流れる。\n・奥には、香水などが買えるショップがある。"
@@ -62,19 +62,18 @@ const SPOTS = [
   {
     id: "cafe-orleans",
     name: "カフェ・オーリンズ",
-    lat: 35.6342,
-    lng: 139.8812,
-    radius: 30,
+    lat: 35.634185,
+    lng: 139.881167,
+    radius: 15,
     category: "food",
     body: "ガンボスープがおいしい。"
   },
   {
-    // 位置未確認：地図データに見つからなかったので、アドベンチャーランドの中心に仮置き
     id: "jungle-carnival",
     name: "ジャングルカーニバル",
-    lat: 35.6334,
-    lng: 139.8814,
-    radius: 30,
+    lat: 35.633983,
+    lng: 139.881795,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "時期によって難易度が変わる。"
@@ -82,9 +81,9 @@ const SPOTS = [
   {
     id: "jungle-cruise",
     name: "ジャングルクルーズ",
-    lat: 35.6340,
-    lng: 139.8824,
-    radius: 40,
+    lat: 35.633876,
+    lng: 139.882382,
+    radius: 15,
     category: "bgs",
     source: "official",
     body: "サムは、売り物を3回変えている（生首、像、お守り）。"
@@ -94,7 +93,7 @@ const SPOTS = [
     name: "魅惑のチキルーム",
     lat: 35.6331,
     lng: 139.8822,
-    radius: 30,
+    radius: 15,
     category: "trivia",
     source: "official",
     body: "椅子が暖かい。"
@@ -103,20 +102,19 @@ const SPOTS = [
     // 「ツリーハウス」はスイスファミリー・ツリーハウスとして置いている（要確認）
     id: "swiss-family-treehouse",
     name: "スイスファミリー・ツリーハウス",
-    lat: 35.6333,
-    lng: 139.8818,
-    radius: 30,
+    lat: 35.633316,
+    lng: 139.88191,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "ツリーハウスの穴から、虎の鳴き声が聞こえる。"
   },
   {
-    // 位置未確認：地図データの「Schweitzer Falls」の位置に仮置き
     id: "falls",
     name: "アドベンチャーランドとウエスタンランドの間の滝",
-    lat: 35.6337,
-    lng: 139.8839,
-    radius: 30,
+    lat: 35.633084,
+    lng: 139.881846,
+    radius: 10,
     category: "trivia",
     source: "official",
     body: "2つのエリアのBGMが混ざらないようにしている。"
@@ -126,7 +124,7 @@ const SPOTS = [
     name: "ウエスタンリバー鉄道",
     lat: 35.6337,
     lng: 139.8824,
-    radius: 40,
+    radius: 15,
     category: "trivia",
     source: "official",
     body: "・本物の蒸気で走っている。\n・ランドの周辺を歩いていると、汽笛の音が聞こえる。"
