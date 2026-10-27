@@ -9,7 +9,8 @@
 
 
 // ---------- 設定 ----------
-const PARK_CENTER = [35.6329, 139.8804]; // 最初に表示する地図の中心（仮）
+const PARK_CENTER = [35.6329, 139.8804]; // 最初に表示する地図の中心（ランド）
+const SEA_CENTER = [35.6262, 139.8850];  // シーの中心（プロメテウス火山のあたり）
 const START_ZOOM = 17;                    // 最初の拡大率（大きいほど拡大）
 const LEAVE_MARGIN = 10;                  // 範囲から「出た」と判定するための余裕（m）
 
@@ -100,6 +101,15 @@ SPOTS.forEach(function (spot) {
     .on("click", function () { showCard(spot); }); // 点をタップしても読める
 
   spotLayers[spot.id] = { circle: circle, dot: dot };
+});
+
+// ランドとシーの切り替え：ボタンを押すと、地図の表示場所を移す
+const btnPark = document.getElementById("btn-park");
+let showingSea = false;
+btnPark.addEventListener("click", function () {
+  showingSea = !showingSea;
+  map.setView(showingSea ? SEA_CENTER : PARK_CENTER, START_ZOOM);
+  btnPark.textContent = showingSea ? "ランドへ" : "シーへ";
 });
 
 

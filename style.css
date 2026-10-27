@@ -81,6 +81,23 @@ button { font-family: inherit; cursor: pointer; }
 /* 地図の色を少しだけセピアに寄せて、紙になじませる */
 .leaflet-tile-pane { filter: sepia(0.25) saturate(0.85); }
 
+/* ランド／シーの切り替えボタン（地図の左下） */
+.park-toggle {
+  position: absolute;
+  left: 10px;
+  bottom: 12px;
+  z-index: 800;            /* 地図より上、デバッグ表示や一覧より下 */
+  padding: 7px 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.18);
+}
+
 .list {
   position: absolute;
   inset: 0;               /* 地図と同じ大きさに広げる */
