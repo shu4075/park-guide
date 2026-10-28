@@ -30,6 +30,16 @@
 
 const SPOTS = [
   {
+    // 通知のテスト用。テストが終わったらこのかたまりごと消す
+    id: "test-nakano",
+    name: "【テスト】中野駅",
+    lat: 35.705779,
+    lng: 139.665786,
+    radius: 1000,
+    category: "trivia",
+    body: "通知のテスト用のスポットです。中野駅から半径1km以内でGPSモードにすると、このカードと通知が出ます。"
+  },
+  {
     id: "main-entrance",
     name: "メインエントランス",
     lat: 35.635304,
