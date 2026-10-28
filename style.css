@@ -81,6 +81,32 @@ button { font-family: inherit; cursor: pointer; }
 /* 地図の色を少しだけセピアに寄せて、紙になじませる */
 .leaflet-tile-pane { filter: sepia(0.25) saturate(0.85); }
 
+/* 表示の切り替え（地図の左上）：本のインデックスのような3つのボタン */
+.filter {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 800;
+  display: flex;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--paper-2);
+  box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.18);
+}
+.filter button {
+  border: 0;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.filter button + button { border-left: 1.5px solid var(--ink); }
+.filter button[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); }
+.filter button[data-filter="hidden"][aria-pressed="true"] { background: var(--hidden); }
+
 /* 画面を消さないスイッチ（地図の左下、ランド／シー切り替えの上） */
 .screen-toggle {
   position: absolute;

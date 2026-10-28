@@ -46,6 +46,12 @@
     <button id="btn-park" class="park-toggle">シーへ</button>
     <!-- 画面を消さないスイッチ（対応している端末だけ表示する） -->
     <button id="btn-screen" class="screen-toggle hidden" aria-pressed="false">画面を消さない：OFF</button>
+    <!-- 表示の切り替え：選んだ種類だけ地図に出し、通知も届く -->
+    <div id="filter" class="filter" role="group" aria-label="表示する種類">
+      <button data-filter="all" aria-pressed="true">すべて</button>
+      <button data-filter="spots" aria-pressed="false">スポット</button>
+      <button data-filter="hidden" aria-pressed="false">隠れミッキー</button>
+    </div>
     <!-- 方位の目印（地図を回しているので、北がどちらかを示す） -->
     <div id="compass" class="compass" aria-label="北の方向"><span>N</span></div>
 

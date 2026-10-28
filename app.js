@@ -135,6 +135,69 @@ btnPark.addEventListener("click", function () {
 });
 
 
+// ---------- 表示の切り替え（すべて／スポット／隠れミッキー） ----------
+// 選んだ種類のスポットだけを、地図に出し、通知・カード・一覧の対象にする。
+// 隠れミッキー探しに集中したいときに、BGSなどの通知が鳴らないようにするため
+const FILTER_LABEL = {
+  all: "すべて",
+  spots: "スポット（BGS・小ネタ・メニュー）",
+  hidden: "隠れミッキー"
+};
+let viewFilter = loadFilter();
+
+function loadFilter() {
+  try {
+    const v = localStorage.getItem("viewFilter");
+    return FILTER_LABEL[v] ? v : "all";
+  } catch (e) {
+    return "all";
+  }
+}
+function saveFilter() {
+  try {
+    localStorage.setItem("viewFilter", viewFilter);
+  } catch (e) { /* 保存できなくても続行 */ }
+}
+
+// このスポットを今の表示の対象にするか
+function isShown(spot) {
+  if (viewFilter === "hidden") return spot.category === "hidden";
+  if (viewFilter === "spots") return spot.category !== "hidden";
+  return true;
+}
+
+// 地図の円と点を、対象のものだけ表示する
+function applyFilterToMap() {
+  SPOTS.forEach(function (spot) {
+    const layers = spotLayers[spot.id];
+    [layers.circle, layers.dot].forEach(function (layer) {
+      if (isShown(spot)) layer.addTo(map); else layer.remove();
+    });
+  });
+  document.querySelectorAll("#filter button").forEach(function (b) {
+    b.setAttribute("aria-pressed", b.dataset.filter === viewFilter ? "true" : "false");
+  });
+}
+
+document.querySelectorAll("#filter button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    viewFilter = b.dataset.filter;
+    saveFilter();
+    applyFilterToMap();
+
+    // 一覧のタブも合わせる（「すべて」のときはタブはそのまま）
+    if (viewFilter === "hidden") listTab = "hidden";
+    if (viewFilter === "spots") listTab = "spots";
+    if (listOpen) renderList();
+    if (debugOn) renderDebug();
+    if (editOn) { stopEdit(); startEdit(); } // 位置編集の ◎ も、表示中のものだけにする
+
+    card.classList.add("hidden");
+    setStatus("表示：" + FILTER_LABEL[viewFilter] + "。通知もこの種類だけ届きます");
+  });
+});
+
+
 // ---------- 見つけた隠れミッキーの記録（ブラウザに保存） ----------
 function loadFound() {
   try {
@@ -202,7 +265,8 @@ function updatePosition(lat, lng, accuracy) {
   let nearestDist = Infinity;
   const entered = []; // 今回、新しく範囲に入ったスポット
 
-  SPOTS.forEach(function (spot) {
+  // 表示の切り替えで選んでいる種類のスポットだけを判定する
+  SPOTS.filter(isShown).forEach(function (spot) {
     const d = distanceMeters(lat, lng, spot.lat, spot.lng);
 
     if (d < nearestDist) { nearest = spot; nearestDist = d; }
@@ -403,7 +467,9 @@ function renderDebug() {
   info.appendChild(makeEl("div", "", "更新：" + formatTime(lastPos.time)));
 
   // 各スポットまでの距離を近い順に。「距離 / 反応する半径」で、範囲の中なら「圏内」
+  // （表示の切り替えで選んでいる種類だけ）
   SPOTS
+    .filter(isShown)
     .map(function (spot) {
       return { spot: spot, d: distanceMeters(lastPos.lat, lastPos.lng, spot.lat, spot.lng) };
     })
@@ -839,7 +905,7 @@ function startEdit() {
   card.classList.add("hidden");
   if (listOpen) btnList.click(); // 一覧を閉じて地図を出す
 
-  SPOTS.forEach(function (spot) {
+  SPOTS.filter(isShown).forEach(function (spot) { // 表示中の種類だけ ◎ を出す
     const handle = L.marker([spot.lat, spot.lng], {
       draggable: true,
       icon: L.divIcon({ className: "edit-handle", iconSize: [28, 28] })
@@ -1012,9 +1078,11 @@ if ("wakeLock" in navigator) {
 }
 
 
-// 開いたときに、デバッグ表示の前回の ON/OFF を反映
+// 開いたときに、デバッグ表示の前回の ON/OFF と、表示の切り替えを反映
 // （mode などの準備が全部終わったここで呼ぶ）
 applyDebug();
+applyFilterToMap();
+if (viewFilter === "hidden") listTab = "hidden";
 
 
 // ---------- オフライン対応（Service Worker の登録） ----------
