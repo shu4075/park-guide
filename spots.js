@@ -304,9 +304,9 @@ const SPOTS = [
   {
     id: "hotel-miracosta",
     name: "ホテルミラコスタ",
-    lat: 35.627301,
-    lng: 139.887970,
-    radius: 40,
+    lat: 35.62707,
+    lng: 139.887993,
+    radius: 50,
     category: "trivia",
     source: "official",
     body: "日本で初めての、パークと一体になったホテル。"
@@ -334,8 +334,8 @@ const SPOTS = [
   {
     id: "ss-columbia",
     name: "S.S.コロンビア号",
-    lat: 35.623385,
-    lng: 139.887061,
+    lat: 35.623445,
+    lng: 139.886882,
     radius: 50,
     category: "bgs",
     source: "official",
@@ -344,8 +344,8 @@ const SPOTS = [
   {
     id: "tower-of-terror",
     name: "タワー・オブ・テラー",
-    lat: 35.624095,
-    lng: 139.888268,
+    lat: 35.624053,
+    lng: 139.888199,
     radius: 40,
     category: "bgs",
     source: "official",
@@ -354,9 +354,9 @@ const SPOTS = [
   {
     id: "toy-story-mania",
     name: "トイ・ストーリー・マニア！",
-    lat: 35.624585,
-    lng: 139.889135,
-    radius: 30,
+    lat: 35.624785,
+    lng: 139.888956,
+    radius: 25,
     category: "trivia",
     source: "official",
     body: "・ウッディの口から入ると、おもちゃの大きさに縮むという設定。\n・まわりのトイビル・トロリーパークのモデルは、ニューヨーク・ブルックリンにあった遊園地「ルナパーク」。"
@@ -364,8 +364,8 @@ const SPOTS = [
   {
     id: "indiana-jones",
     name: "インディ・ジョーンズ・アドベンチャー",
-    lat: 35.626712,
-    lng: 139.880612,
+    lat: 35.626764,
+    lng: 139.880971,
     radius: 40,
     category: "bgs",
     source: "official",
@@ -374,8 +374,8 @@ const SPOTS = [
   {
     id: "raging-spirits",
     name: "レイジングスピリッツ",
-    lat: 35.627711,
-    lng: 139.880818,
+    lat: 35.627644,
+    lng: 139.880926,
     radius: 35,
     category: "bgs",
     source: "official",
@@ -384,8 +384,8 @@ const SPOTS = [
   {
     id: "sindbad",
     name: "シンドバッド・ストーリーブック・ヴォヤッジ",
-    lat: 35.628764,
-    lng: 139.881617,
+    lat: 35.628571,
+    lng: 139.881589,
     radius: 30,
     category: "trivia",
     source: "official",
@@ -396,7 +396,7 @@ const SPOTS = [
     name: "キング・トリトン・キャッスル",
     lat: 35.626987,
     lng: 139.882956,
-    radius: 35,
+    radius: 25,
     category: "bgs",
     source: "official",
     body: "・お城はサンゴでできていて、海から上がってきたばかりという設定。\n・城に入ると、2頭のイルカが引く戦車に乗ったトリトン王の金色の像がある。そこでトリトン王が魔法をかけて、海の中でも息ができるようになっている。"
@@ -405,8 +405,8 @@ const SPOTS = [
     id: "scuttles-scooters",
     name: "スカットルのスクーター",
     lat: 35.627275,
-    lng: 139.883210,
-    radius: 20,
+    lng: 139.88321,
+    radius: 15,
     category: "trivia",
     source: "official",
     body: "スカットルは、望遠鏡を反対側から覗いている。"
@@ -414,8 +414,8 @@ const SPOTS = [
   {
     id: "rapunzel-lantern-festival",
     name: "ラプンツェルのランタンフェスティバル",
-    lat: 35.628985,
-    lng: 139.879449,
+    lat: 35.628987,
+    lng: 139.879299,
     radius: 35,
     category: "trivia",
     source: "official",
