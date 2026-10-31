@@ -2,6 +2,8 @@
    style.css … 見た目の設定
    テーマは「紙のガイドブック」：クリーム色の紙、墨色の文字、
    明朝体の見出し、スタンプやラベルのような札
+   画面の作りは地図アプリでよく使われる形：
+   地図を画面いっぱいに出して、下から引き出し（ボトムシート）を出す
    ===================================================== */
 
 /* よく使う色と書体に名前をつけておく（変えるときはここだけ直せばよい） */
@@ -17,6 +19,11 @@
   --trivia:    #5b7a3a;  /* 小ネタの色 */
   --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
   --sans: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  --shadow: 2px 2px 0 rgba(43, 33, 24, 0.18); /* ぼかさない影で、紙を重ねた感じに */
+
+  /* 引き出しの「いつも見えている部分」の高さ。地図はこの上までにする */
+  --peek: calc(118px + env(safe-area-inset-bottom));
+  --safe-top: env(safe-area-inset-top);
 }
 
 * { box-sizing: border-box; }
@@ -24,118 +31,102 @@
 html, body {
   margin: 0;
   height: 100%;
+  overflow: hidden;        /* ページ全体はスクロールさせない（地図アプリと同じ） */
   font-family: var(--sans);
   color: var(--ink);
   background: var(--paper);
 }
 
-body {
-  display: flex;
-  flex-direction: column;
-}
+button { font-family: inherit; cursor: pointer; color: inherit; }
 
-button { font-family: inherit; cursor: pointer; }
-
-/* ---------- 上のバー ---------- */
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px 14px;
-  padding-top: calc(10px + env(safe-area-inset-top));
+/* ---------- 地図（画面いっぱい。下は引き出しの分だけあける） ---------- */
+#map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--peek);
   background: var(--paper);
-  border-bottom: 3px double var(--ink); /* 本の柱のような二重線 */
-  z-index: 1000;
 }
-.title {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis; /* 狭い画面では、入りきらない部分を「…」にする */
-  white-space: nowrap;
-  font-family: var(--serif);
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 0.06em;
-}
-.actions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
-
-.view-toggle,
-.mode {
-  border: 0;
-  padding: 6px 11px;
-  background: transparent;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap; /* ボタンの文字を折り返さない */
-}
-.view-toggle { border: 1.5px solid var(--ink); border-radius: 4px; }
-.modes { display: flex; border: 1.5px solid var(--ink); border-radius: 4px; overflow: hidden; }
-.mode + .mode { border-left: 1.5px solid var(--ink); }
-.mode.active { background: var(--ink); color: var(--paper-2); }
-
-/* ---------- 地図と一覧（一覧は地図の上に重ねる） ---------- */
-.main { flex: 1; position: relative; display: flex; flex-direction: column; }
-#map { flex: 1; background: var(--paper); }
 /* 地図の色を少しだけセピアに寄せて、紙になじませる */
 .leaflet-tile-pane { filter: sepia(0.25) saturate(0.85); }
+.leaflet-control-attribution { font-size: 10px; }
 
-/* 表示の切り替え（地図の左上）：本のインデックスのような3つのボタン */
-.filter {
-  position: absolute;
-  top: 10px;
+/* ---------- 上の操作 ---------- */
+.top-controls {
+  position: fixed;
+  top: calc(10px + var(--safe-top));
   left: 10px;
-  z-index: 800;
-  display: flex;
-  border: 1.5px solid var(--ink);
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--paper-2);
-  box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.18);
-}
-.filter button {
-  border: 0;
-  padding: 6px 10px;
-  background: transparent;
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-.filter button + button { border-left: 1.5px solid var(--ink); }
-.filter button[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); }
-.filter button[data-filter="hidden"][aria-pressed="true"] { background: var(--hidden); }
-
-/* 画面を消さないスイッチ（地図の左下、ランド／シー切り替えの上） */
-.screen-toggle {
-  position: absolute;
-  left: 10px;
-  bottom: 54px;
-  z-index: 800;
-  padding: 6px 10px;
-  border: 1.5px solid var(--ink);
-  border-radius: 4px;
-  background: var(--paper-2);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.18);
-}
-.screen-toggle.on { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
-
-/* 方位の目印（地図の右上）。app.js が北の方向に回す */
-.compass {
-  position: absolute;
-  top: 10px;
   right: 10px;
   z-index: 800;
-  width: 34px;
-  height: 34px;
+  pointer-events: none;    /* すき間は地図を触れるようにする */
+}
+.top-controls > * > *,
+.top-controls .chips { pointer-events: auto; }
+.top-row { display: flex; align-items: center; gap: 8px; }
+
+/* 2つから1つを選ぶボタン（ランド／シー） */
+.segmented {
+  display: flex;
+  border: 1.5px solid var(--ink);
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--paper-2);
+  box-shadow: var(--shadow);
+}
+.segmented button {
+  min-width: 64px;
+  height: 40px;
+  padding: 0 14px;
+  border: 0;
+  background: transparent;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+}
+.segmented button[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); }
+
+/* 丸いボタン（メニュー、現在地） */
+.round-btn {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   border: 1.5px solid var(--ink);
   border-radius: 50%;
   background: var(--paper-2);
-  pointer-events: none;
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.round-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+
+/* メニューの「≡」を線で描く */
+.menu-icon,
+.menu-icon::before,
+.menu-icon::after {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 1px;
+}
+.menu-icon { position: relative; }
+.menu-icon::before,
+.menu-icon::after { content: ""; position: absolute; left: 0; }
+.menu-icon::before { top: -6px; }
+.menu-icon::after { top: 6px; }
+
+/* 方位の目印。app.js が北の方向に回す */
+.compass {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  margin-left: auto;       /* 右に寄せる（メニューの左どなり） */
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper-2);
+  pointer-events: none !important;
 }
 .compass span {
   position: absolute;
@@ -152,57 +143,171 @@ button { font-family: inherit; cursor: pointer; }
   content: "";
   position: absolute;
   left: 50%;
-  top: 16px;
-  width: 0;
-  height: 0;
+  top: 17px;
   margin-left: -4px;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
   border-bottom: 10px solid var(--accent);
 }
 
-/* ランド／シーの切り替えボタン（地図の左下） */
-.park-toggle {
-  position: absolute;
-  left: 10px;
-  bottom: 12px;
-  z-index: 800;            /* 地図より上、デバッグ表示や一覧より下 */
-  padding: 7px 12px;
+/* 表示の切り替え：横に並んだ札（チップ）。入りきらなければ横にずらせる */
+.chips {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chips button {
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 14px;
   border: 1.5px solid var(--ink);
-  border-radius: 4px;
+  border-radius: 17px;
   background: var(--paper-2);
-  color: var(--ink);
-  font-family: var(--serif);
   font-size: 13px;
   font-weight: 700;
-  box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.18);
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+}
+.chips button[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); }
+.chips button[data-filter="hidden"][aria-pressed="true"] { background: var(--hidden); border-color: var(--hidden); }
+
+/* 現在地ボタン（右下。引き出しのすぐ上で、親指が届く場所） */
+.locate {
+  position: fixed;
+  right: 12px;
+  bottom: calc(var(--peek) + 14px);
+  z-index: 800;
+  width: 48px;
+  height: 48px;
+}
+/* 照準のようなアイコン：輪と中心の点 */
+.locate-icon {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+}
+.locate-icon::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.locate.active .locate-icon { border-color: #2d8cff; }
+.locate.active .locate-icon::after { background: #2d8cff; }
+
+/* ---------- 引き出し（ボトムシート） ---------- */
+/* 3つの大きさ：peek（少しだけ）・half（半分）・full（ほぼ全画面）
+   高さは固定して、下にずらす量（transform）で大きさを変える */
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  height: calc(100% - 64px - var(--safe-top));
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-2);
+  border: 1.5px solid var(--ink);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -3px 0 rgba(43, 33, 24, 0.12);
+  transform: translateY(calc(100% - var(--peek)));
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  touch-action: none;      /* つまみ周りのドラッグを、ページのスクロールにしない */
+}
+.sheet[data-state="half"] { transform: translateY(45%); }
+.sheet[data-state="full"] { transform: translateY(0); }
+.sheet.dragging { transition: none; }
+
+.sheet-handle {
+  flex-shrink: 0;
+  height: 22px;
+  border: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+}
+.sheet-handle span {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--rule);
 }
 
-.list {
-  position: absolute;
-  inset: 0;               /* 地図と同じ大きさに広げる */
-  z-index: 1000;          /* 地図より上に表示 */
-  overflow-y: auto;       /* 長くなったらスクロール */
-  background: var(--paper);
-  padding: 14px 14px 160px; /* 下はカードに隠れないように余白 */
+.sheet-peek { flex-shrink: 0; padding: 0 16px calc(10px + env(safe-area-inset-bottom)); }.status {
+  margin: 0 0 10px;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+  /* 長くても2行まで */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.9em;
 }
-.list-note { margin: 0 2px 10px; font-size: 12px; color: var(--ink-soft); }
-.list-items { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+.peek-actions { display: flex; gap: 8px; }
+.peek-actions .btn { padding: 10px 12px; font-size: 14px; }
+.peek-actions .gps-btn { flex: 1; width: auto; white-space: nowrap; }
+.gps-btn[aria-pressed="true"] { background: var(--paper-2); color: var(--accent); }
+/* GPS中は、左に点滅する点をつけて「動いている」ことを示す */
+.gps-btn[aria-pressed="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 1px;
+  animation: blink 1.4s ease-in-out infinite;
+}
+@keyframes blink { 50% { opacity: 0.25; } }
+.peek-actions .screen-toggle { width: auto; flex-shrink: 0; }
+.screen-toggle.on { background: var(--ink); border-color: var(--ink); color: var(--paper-2); }
+
+/* 引き出しの中身。ここだけスクロールする */
+.sheet-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 4px 16px calc(24px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule);
+}
+
+/* ---------- 一覧 ---------- */
+.list-note { margin: 0 2px 8px; font-size: 12px; color: var(--ink-soft); }
+.list-items { list-style: none; margin: 0; padding: 0; }
 .list-item {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 13px 4px;
+  min-height: 52px;
+  padding: 10px 2px;
   border: 0;
   border-bottom: 1px dashed var(--rule); /* 目次のような点線 */
   background: transparent;
   text-align: left;
-  color: inherit;
 }
+.list-item:active { background: var(--paper); }
 .list-item .badge { flex-shrink: 0; }
 .list-name { flex: 1; font-family: var(--serif); font-size: 16px; font-weight: 700; }
 .list-dist { flex-shrink: 0; font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.list-item::after { content: "›"; color: var(--ink-soft); font-size: 18px; }
 /* 「発見済み」はスタンプを押したように少し傾ける */
 .list-found {
   flex-shrink: 0;
@@ -216,10 +321,10 @@ button { font-family: inherit; cursor: pointer; }
 }
 
 /* タブ：本のインデックスのように、選んでいるほうを下線で示す */
-.tabs { display: flex; margin: -2px 0 14px; border-bottom: 1px solid var(--ink); }
+.tabs { display: flex; margin: 0 -16px 12px; padding: 0 16px; border-bottom: 1px solid var(--ink); }
 .tab {
   flex: 1;
-  padding: 10px 4px;
+  padding: 11px 4px;
   border: 0;
   border-bottom: 3px solid transparent;
   background: transparent;
@@ -232,10 +337,10 @@ button { font-family: inherit; cursor: pointer; }
 
 /* 隠れミッキーの進捗 */
 .progress {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   padding: 12px 14px;
   border: 1px solid var(--ink);
-  background: var(--paper-2);
+  background: var(--paper);
 }
 .progress-text { margin: 0 0 8px; font-family: var(--serif); font-size: 15px; font-weight: 700; }
 .progress-bar { height: 8px; border: 1px solid var(--ink); background: transparent; }
@@ -246,74 +351,27 @@ button { font-family: inherit; cursor: pointer; }
   transition: width 0.3s ease-out;
 }
 
-/* ネタの投稿 */
-.submit {
-  margin-top: 22px;
-  padding: 14px 16px 16px;
-  border: 1.5px dashed var(--ink);
-  background: var(--paper-2);
+/* ---------- スポットのカード（引き出しの中に出す） ---------- */
+.card { animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
 }
-.submit h3 { margin: 0 0 6px; font-family: var(--serif); font-size: 17px; }
-.submit p { margin: 0; font-size: 14px; line-height: 1.7; }
-.submit-rules { margin: 8px 0 12px; padding-left: 1.2em; font-size: 13px; line-height: 1.8; color: var(--ink-soft); }
-.submit-unready { color: var(--ink-soft); font-size: 13px; }
-
-/* ---------- 状態表示 ---------- */
-.status {
-  padding: 9px 14px;
-  background: var(--paper-2);
-  border-top: 1px solid var(--ink);
-  font-size: 13px;
-}
-
-/* ---------- お知らせ ---------- */
-.notice {
-  padding: 6px 14px;
-  padding-bottom: calc(6px + env(safe-area-inset-bottom));
-  background: var(--paper-2);
-  color: var(--ink-soft);
-  font-size: 11px;
-  text-align: center;
-}
-
-/* ---------- スポットのカード ---------- */
-.card {
-  position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: calc(76px + env(safe-area-inset-bottom));
-  max-width: 520px;
-  max-height: calc(100% - 150px); /* 写真で長くなっても画面からはみ出さない */
-  overflow-y: auto;
-  margin: 0 auto;
-  padding: 16px 18px 18px;
-  background: var(--paper-2);
-  border: 3px double var(--ink);
-  border-radius: 4px;
-  box-shadow: 5px 5px 0 rgba(43, 33, 24, 0.18); /* ぼかさない影で、紙を重ねた感じに */
-  z-index: 1001;
-  animation: slideUp 0.25s ease-out;
-}
-@keyframes slideUp {
-  from { transform: translateY(16px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-.card h2 { margin: 10px 0 8px; font-family: var(--serif); font-size: 20px; line-height: 1.4; }
-.card p  { margin: 0; font-family: var(--serif); font-size: 15px; line-height: 1.9; }
-#card-body { white-space: pre-line; } /* spots.js の \n で改行して、箇条書きにできる */
-
-.close {
-  position: absolute;
-  top: 6px;
-  right: 8px;
+.back-btn {
+  margin: 4px 0 10px -4px;
+  padding: 6px 4px;
   border: 0;
   background: transparent;
-  font-size: 22px;
   color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 700;
 }
+.card h2 { margin: 10px 0 8px; font-family: var(--serif); font-size: 22px; line-height: 1.4; }
+.card p  { margin: 0; font-family: var(--serif); font-size: 16px; line-height: 1.9; }
+#card-body { white-space: pre-line; } /* spots.js の \n で改行して、箇条書きにできる */
 
 /* 札（カテゴリと情報源）：ラベルのような枠線だけの札 */
-.badges { display: flex; gap: 6px; padding-right: 28px; }
+.badges { display: flex; gap: 6px; }
 .badge {
   padding: 2px 7px;
   border: 1.5px solid var(--c, var(--ink)); /* --c は app.js がカテゴリの色を入れる */
@@ -343,17 +401,17 @@ button { font-family: inherit; cursor: pointer; }
 .btn {
   display: block;
   width: 100%;
-  padding: 11px;
+  padding: 12px;
   border: 1.5px solid var(--ink);
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
-  color: var(--ink);
   font-size: 15px;
   font-weight: 700;
   text-align: center;
   text-decoration: none;
 }
 .btn.primary { border-color: var(--accent); background: var(--accent); color: var(--paper-2); }
+.btn.on { background: var(--ink); border-color: var(--ink); color: var(--paper-2); }
 .card-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 
 /* 答え合わせ：2枚の写真を横に並べる */
@@ -365,6 +423,55 @@ button { font-family: inherit; cursor: pointer; }
 
 .card-progress { margin: 10px 0 0; font-size: 13px; color: var(--ink-soft); }
 .card .card-progress { font-family: var(--sans); font-size: 12px; line-height: 1.5; }
+
+/* ---------- メニュー ---------- */
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(43, 33, 24, 0.35);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.menu {
+  width: 100%;
+  max-width: 640px;
+  max-height: 88%;
+  overflow-y: auto;
+  padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
+  background: var(--paper-2);
+  border: 1.5px solid var(--ink);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  animation: fadeIn 0.2s ease-out;
+}
+.menu-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px double var(--ink); padding-bottom: 8px; }
+.menu-head h2 { margin: 0; font-family: var(--serif); font-size: 18px; letter-spacing: 0.06em; }
+.close {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  font-size: 24px;
+  color: var(--ink-soft);
+}
+.menu-sub { margin: 20px 0 8px; font-family: var(--serif); font-size: 15px; }
+.menu-tools { display: grid; gap: 8px; }
+.menu-tools .btn { padding: 10px; font-size: 14px; }
+.notice { margin: 18px 0 0; font-size: 11px; line-height: 1.6; color: var(--ink-soft); text-align: center; }
+
+/* ネタの投稿 */
+.submit {
+  margin-top: 14px;
+  padding: 14px 16px 16px;
+  border: 1.5px dashed var(--ink);
+  background: var(--paper);
+}
+.submit h3 { margin: 0 0 6px; font-family: var(--serif); font-size: 17px; }
+.submit p { margin: 0; font-size: 14px; line-height: 1.7; }
+.submit-rules { margin: 8px 0 12px; padding-left: 1.2em; font-size: 13px; line-height: 1.8; color: var(--ink-soft); }
+.submit-unready { color: var(--ink-soft); font-size: 13px; }
 
 /* ---------- 位置編集モード ---------- */
 /* 地図の上の「◎」：ドラッグして動かす */
@@ -378,13 +485,13 @@ button { font-family: inherit; cursor: pointer; }
   position: fixed;
   left: 8px;
   right: 8px;
-  bottom: calc(70px + env(safe-area-inset-bottom));
+  bottom: calc(8px + env(safe-area-inset-bottom));
   max-width: 520px;
   margin: 0 auto;
   padding: 12px 14px;
   background: var(--paper-2);
   border: 2px solid var(--accent);
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: 4px 4px 0 rgba(43, 33, 24, 0.18);
   z-index: 1002;
 }
@@ -393,6 +500,10 @@ button { font-family: inherit; cursor: pointer; }
 .edit-row { display: flex; gap: 8px; margin-bottom: 8px; }
 .edit-row .btn { padding: 8px; font-size: 13px; }
 .edit-note { margin: 0; font-size: 11px; line-height: 1.5; color: var(--ink-soft); }
+/* 位置編集中は、引き出しと現在地ボタンをしまう */
+body.editing .sheet,
+body.editing .locate { display: none; }
+body.editing #map { bottom: 0; }
 
 /* ---------- アプリ内カメラ ---------- */
 .camera {
@@ -442,27 +553,16 @@ button { font-family: inherit; cursor: pointer; }
 .shutter:active { transform: scale(0.94); }
 
 /* ---------- デバッグ表示（実地テスト用） ---------- */
-.debug-toggle {
-  margin-left: 6px;
-  padding: 1px 6px;
-  border: 1px solid var(--rule);
-  border-radius: 3px;
-  background: transparent;
-  color: var(--ink-soft);
-  font-size: 10px;
-}
-.debug-toggle.on { background: var(--ink); border-color: var(--ink); color: var(--paper-2); }
-
 .debug {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  max-height: 45%;
+  position: fixed;
+  top: calc(104px + var(--safe-top)); /* 上の操作の下 */
+  left: 10px;
+  right: 10px;
+  max-height: 35%;
   overflow: hidden;
-  z-index: 900;            /* 地図より上、一覧より下 */
+  z-index: 900;
   padding: 8px 10px;
-  border-radius: 4px;
+  border-radius: 6px;
   background: rgba(43, 33, 24, 0.85);
   color: #fff;
   font-family: ui-monospace, Menlo, Consolas, monospace;

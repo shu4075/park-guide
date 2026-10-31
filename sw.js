@@ -9,7 +9,7 @@
 
 
 // ファイルを大きく変えたら、この番号を上げる（古いキャッシュが消える）
-const CACHE_NAME = "park-guide-v3";
+const CACHE_NAME = "park-guide-v4";
 
 // オフラインでも使いたいファイルの一覧
 const APP_FILES = [

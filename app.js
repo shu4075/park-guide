@@ -124,15 +124,19 @@ SPOTS.forEach(function (spot) {
   spotLayers[spot.id] = { circle: circle, dot: dot };
 });
 
-// ランドとシーの切り替え：ボタンを押すと、地図の表示場所を移す
-const btnPark = document.getElementById("btn-park");
+// ランドとシーの切り替え：押したほうのパークに、地図の表示場所を移す
+const btnLand = document.getElementById("park-land");
+const btnSea = document.getElementById("park-sea");
 let showingSea = false;
-btnPark.addEventListener("click", function () {
-  showingSea = !showingSea;
-  map.setView(showingSea ? SEA_CENTER : PARK_CENTER, START_ZOOM);
-  setMapBearing(showingSea ? SEA_BEARING : LAND_BEARING);
-  btnPark.textContent = showingSea ? "ランドへ" : "シーへ";
-});
+function showPark(sea) {
+  showingSea = sea;
+  map.setView(sea ? SEA_CENTER : PARK_CENTER, START_ZOOM);
+  setMapBearing(sea ? SEA_BEARING : LAND_BEARING);
+  btnLand.setAttribute("aria-pressed", sea ? "false" : "true");
+  btnSea.setAttribute("aria-pressed", sea ? "true" : "false");
+}
+btnLand.addEventListener("click", function () { showPark(false); });
+btnSea.addEventListener("click", function () { showPark(true); });
 
 
 // ---------- 表示の切り替え（すべて／スポット／隠れミッキー） ----------
@@ -188,11 +192,10 @@ document.querySelectorAll("#filter button").forEach(function (b) {
     // 一覧のタブも合わせる（「すべて」のときはタブはそのまま）
     if (viewFilter === "hidden") listTab = "hidden";
     if (viewFilter === "spots") listTab = "spots";
-    if (listOpen) renderList();
     if (debugOn) renderDebug();
     if (editOn) { stopEdit(); startEdit(); } // 位置編集の ◎ も、表示中のものだけにする
 
-    card.classList.add("hidden");
+    closeCard(); // 一覧にもどす（一覧もここで作り直される）
     setStatus("表示：" + FILTER_LABEL[viewFilter] + "。通知もこの種類だけ届きます");
   });
 });
@@ -291,15 +294,109 @@ function updatePosition(lat, lng, accuracy) {
     setStatus("いちばん近いスポット：" + nearest.name + "（約" + Math.round(nearestDist) + "m）");
   }
 
-  if (listOpen) renderList(); // 一覧を開いていたら、並び順と距離を更新
+  renderList();               // 一覧の並び順と距離を更新
   if (debugOn) renderDebug(); // デバッグ表示も更新
+  if (following) map.panTo([lat, lng]); // 現在地ボタンを押したあとは、地図が自分についてくる
 }
+
+
+// ---------- 下の引き出し（ボトムシート） ----------
+// 地図アプリでよく使われる形。地図を見ながら、下から情報を引き出せる。
+// 大きさは3段階：peek（少しだけ）→ half（半分）→ full（ほぼ全画面）
+// 仕組み：引き出しの高さは固定で、style.css の transform で「下にずらす量」を変えている。
+// つまみを指で動かしている間は、指に合わせて直接ずらし、離したら近い段階にぴたっと止める。
+const sheet = document.getElementById("sheet");
+const sheetBody = document.getElementById("sheet-body");
+const sheetHandle = document.getElementById("sheet-handle");
+const SHEET_STATES = ["peek", "half", "full"];
+
+function setSheet(state) {
+  sheet.dataset.state = state;
+  sheet.style.transform = ""; // ドラッグ中に直接入れた値を消して、style.css の値にもどす
+  sheetHandle.setAttribute("aria-label", state === "full" ? "引き出しを小さくする" : "引き出しを広げる");
+}
+
+// つまみと「いつも見えている部分」を上下にドラッグできるようにする
+(function () {
+  let startY = 0;
+  let startOffset = 0;
+  let moved = false;
+  let dragging = false;
+
+  function onDown(e) {
+    if (e.target.closest("button") && e.target !== sheetHandle && !sheetHandle.contains(e.target)) return; // ボタンは普通に押せるようにする
+    dragging = true;
+    moved = false;
+    startY = e.clientY;
+    // 指が引き出しの外に出ても、離すまで追いかける
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+    // 今の位置を、画面に出ている見た目から読み取る
+    startOffset = new DOMMatrix(getComputedStyle(sheet).transform).m42;
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const dy = e.clientY - startY;
+    if (!moved && Math.abs(dy) < 6) return; // 少し動いただけならタップ扱い
+    if (!moved) {
+      moved = true;
+      sheet.classList.add("dragging");
+    }
+    const maxOffset = sheet.offsetHeight - peekHeight();
+    const y = Math.min(Math.max(startOffset + dy, 0), maxOffset);
+    sheet.style.transform = "translateY(" + y + "px)";
+  }
+  function onUp(e) {
+    if (!dragging) return;
+    dragging = false;
+    sheet.classList.remove("dragging");
+    if (!moved) return;
+    // 離した位置に一番近い段階を選ぶ。速くはじいたら、その向きに1段階進める
+    const y = new DOMMatrix(getComputedStyle(sheet).transform).m42;
+    const h = sheet.offsetHeight;
+    const offsets = { full: 0, half: h * 0.45, peek: h - peekHeight() };
+    const dy = e.clientY - startY;
+    let best = "peek";
+    SHEET_STATES.forEach(function (s) {
+      if (Math.abs(offsets[s] - y) < Math.abs(offsets[best] - y)) best = s;
+    });
+    const before = sheet.dataset.state;
+    if (best === before && Math.abs(dy) > 40) {
+      const i = SHEET_STATES.indexOf(before) + (dy < 0 ? 1 : -1);
+      best = SHEET_STATES[Math.min(Math.max(i, 0), 2)];
+    }
+    setSheet(best);
+  }
+  // つまみと上の部分だけでドラッグする（中身のスクロールとぶつからないように）
+  [sheetHandle, document.querySelector(".sheet-peek")].forEach(function (el) {
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+  });
+  // つまみをタップしたら、次の大きさにする（full のときは peek にもどす）
+  sheetHandle.addEventListener("click", function () {
+    if (moved) return;
+    const s = sheet.dataset.state;
+    setSheet(s === "peek" ? "half" : s === "half" ? "full" : "peek");
+  });
+})();
+
+// 「いつも見えている部分」の高さ（px）
+function peekHeight() {
+  return document.querySelector(".sheet-handle").offsetHeight + document.querySelector(".sheet-peek").offsetHeight;
+}
+// 実際の高さを測って style.css の --peek に入れる（地図の下端と現在地ボタンの位置がこれで決まる）。
+// 文字の大きさの設定などで高さが変わっても、ずれないようにするため
+function fitPeek() {
+  document.documentElement.style.setProperty("--peek", peekHeight() + "px");
+  map.invalidateSize(); // 地図の大きさが変わったことを Leaflet に知らせる
+}
+window.addEventListener("resize", fitPeek);
 
 
 // ---------- スポット一覧 ----------
 const listEl = document.getElementById("list");
-const btnList = document.getElementById("btn-list");
-let listOpen = false;
+const listOpen = true; // 一覧はいつも引き出しの中にある
 
 // 距離を読みやすい形にする（例：85m、1.2km）
 function formatDistance(m) {
@@ -317,7 +414,6 @@ function renderList() {
   document.getElementById("tab-spots").classList.toggle("active", !showHidden);
   document.getElementById("tab-hidden").classList.toggle("active", showHidden);
   document.getElementById("list-progress-box").classList.toggle("hidden", !showHidden);
-  document.getElementById("submit-box").classList.toggle("hidden", showHidden);
 
   // 今のタブのスポットだけを取り出して、「自分からの距離」をつける（位置がまだわからなければ null）
   const items = SPOTS
@@ -340,7 +436,7 @@ function renderList() {
 
   let note = lastPos
     ? "近い順に並んでいます。タップすると読めます"
-    : "現在地がわかると近い順に並びます（デモでは地図をタップ、またはGPSをオン）";
+    : "現在地がわかると近い順に並びます（「GPSで歩く」を押してください）";
   if (showHidden) note += "。見つけるまでは、ヒントだけが出ます";
   if (items.length === 0) note = "まだありません";
   document.getElementById("list-note").textContent = note;
@@ -401,13 +497,6 @@ document.getElementById("tab-spots").addEventListener("click", function () {
 document.getElementById("tab-hidden").addEventListener("click", function () {
   listTab = "hidden";
   renderList();
-});
-
-btnList.addEventListener("click", function () {
-  listOpen = !listOpen;
-  listEl.classList.toggle("hidden", !listOpen);
-  btnList.textContent = listOpen ? "地図" : "一覧";
-  if (listOpen) renderList();
 });
 
 
@@ -496,6 +585,7 @@ btnDebug.addEventListener("click", function () {
   debugOn = !debugOn;
   saveDebugSetting();
   applyDebug();
+  closeMenu();
 });
 
 
@@ -548,15 +638,26 @@ function showCard(spot) {
   progressEl.textContent = progressText();
   progressEl.classList.toggle("hidden", spot.category !== "hidden");
 
+  // 引き出しの中身を、一覧からカードに入れかえる。小さくしていたら半分まで広げる
+  listEl.classList.add("hidden");
   card.classList.remove("hidden");
+  sheetBody.scrollTop = 0;
+  if (sheet.dataset.state === "peek") setSheet("half");
+}
+
+// カードを閉じて、一覧にもどす
+function closeCard() {
+  card.classList.add("hidden");
+  listEl.classList.remove("hidden");
+  renderList();
 }
 
 // 見つけたことにする（「見つけた！」「合ってた！」の両方から使う）
 function markFound(spot) {
   found.add(spot.id);
   saveFound();
-  showCard(spot);             // 答えと、増えた進捗を表示し直す
-  if (listOpen) renderList(); // 一覧の進捗と「発見済み」も更新
+  showCard(spot); // 答えと、増えた進捗を表示し直す
+  renderList();   // 一覧の進捗と「発見済み」も更新
 }
 
 foundBtn.addEventListener("click", function () {
@@ -739,9 +840,7 @@ function loadPhoto(id) {
   }).catch(function () { return null; });
 }
 
-document.getElementById("card-close").addEventListener("click", function () {
-  card.classList.add("hidden");
-});
+document.getElementById("card-close").addEventListener("click", closeCard);
 
 function setStatus(text) {
   document.getElementById("status").textContent = text;
@@ -818,25 +917,65 @@ function stopGps() {
   }
 }
 
+// 下の大きなボタン1つで GPS をつけたり消したりする（消すとデモにもどる）
 const btnDemo = document.getElementById("btn-demo");
 const btnGps = document.getElementById("btn-gps");
 
-btnDemo.addEventListener("click", function () {
-  mode = "demo";
-  stopGps();
-  btnDemo.classList.add("active");
-  btnGps.classList.remove("active");
-  setStatus("地図をタップすると、そこに「自分」が移動します");
+function setMode(newMode) {
+  mode = newMode;
+  const gps = mode === "gps";
+  btnGps.setAttribute("aria-pressed", gps ? "true" : "false");
+  btnGps.textContent = gps ? "GPSで案内中（止める）" : "GPSで歩く";
+  btnDemo.classList.toggle("on", !gps);
+  if (gps) {
+    startGps();
+    following = true; // GPS をつけたら、地図が自分についてくる
+    btnLocate.classList.add("active");
+  } else {
+    stopGps();
+    setStatus("デモ中：地図をタップすると、そこに「自分」が移動します");
+  }
   if (debugOn) renderDebug();
-});
+}
 
 btnGps.addEventListener("click", function () {
-  mode = "gps";
-  btnGps.classList.add("active");
-  btnDemo.classList.remove("active");
-  startGps();
-  if (debugOn) renderDebug();
+  setMode(mode === "gps" ? "demo" : "gps");
 });
+btnDemo.addEventListener("click", function () {
+  setMode("demo");
+  closeMenu();
+});
+
+
+// ---------- 現在地ボタン ----------
+// 押すと地図を自分の位置にもどし、そのあとは歩くと地図がついてくる（following）。
+// 指で地図を動かしたら、ついてくるのをやめる（見たい場所を見ていられるように）
+const btnLocate = document.getElementById("btn-locate");
+let following = false;
+
+btnLocate.addEventListener("click", function () {
+  if (!lastPos) {
+    if (mode !== "gps") setMode("gps"); // 位置がまだなければ GPS をつける
+    return;
+  }
+  following = true;
+  btnLocate.classList.add("active");
+  map.setView([lastPos.lat, lastPos.lng], Math.max(map.getZoom(), 18));
+});
+map.on("dragstart", function () {
+  following = false;
+  btnLocate.classList.remove("active");
+});
+
+
+// ---------- メニュー ----------
+const menuEl = document.getElementById("menu");
+function openMenu() { menuEl.classList.remove("hidden"); }
+function closeMenu() { menuEl.classList.add("hidden"); }
+document.getElementById("btn-menu").addEventListener("click", openMenu);
+document.getElementById("menu-close").addEventListener("click", closeMenu);
+// 暗いところ（メニューの外）をタップしても閉じる
+menuEl.addEventListener("click", function (e) { if (e.target === menuEl) closeMenu(); });
 
 // ---------- 位置編集モード ----------
 // パークでスポットの位置と半径を直すためのモード。
@@ -902,8 +1041,9 @@ function selectEditSpot(spot) {
 function startEdit() {
   editOn = true;
   btnEdit.classList.add("on");
-  card.classList.add("hidden");
-  if (listOpen) btnList.click(); // 一覧を閉じて地図を出す
+  closeMenu();
+  document.body.classList.add("editing"); // 引き出しをしまって、地図を広く使う
+  map.invalidateSize();
 
   SPOTS.filter(isShown).forEach(function (spot) { // 表示中の種類だけ ◎ を出す
     const handle = L.marker([spot.lat, spot.lng], {
@@ -934,6 +1074,8 @@ function stopEdit() {
   editHandles.forEach(function (h) { map.removeLayer(h); });
   editHandles = [];
   editBar.classList.add("hidden");
+  document.body.classList.remove("editing");
+  map.invalidateSize();
 }
 
 btnEdit.addEventListener("click", function () {
@@ -1028,7 +1170,7 @@ function saveScreenSetting() {
 
 function renderScreenButton() {
   const on = screenWanted && wakeLock !== null;
-  btnScreen.textContent = "画面を消さない：" + (on ? "ON" : "OFF");
+  btnScreen.textContent = on ? "画面ON中" : "画面を消さない";
   btnScreen.classList.toggle("on", on);
   btnScreen.setAttribute("aria-pressed", on ? "true" : "false");
 }
@@ -1083,6 +1225,9 @@ if ("wakeLock" in navigator) {
 applyDebug();
 applyFilterToMap();
 if (viewFilter === "hidden") listTab = "hidden";
+setMode("demo");
+renderList();
+fitPeek();
 
 
 // ---------- オフライン対応（Service Worker の登録） ----------

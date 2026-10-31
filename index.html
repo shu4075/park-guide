@@ -26,56 +26,147 @@
 </head>
 <body>
 
-  <!-- 上のバー：タイトルとモード切り替え -->
-  <header class="topbar">
-    <div class="title">パークさんぽガイド</div>
-    <div class="actions">
-      <!-- 地図と一覧の切り替え -->
-      <button id="btn-list" class="view-toggle">一覧</button>
-      <div class="modes">
-        <button id="btn-demo" class="mode active">デモ</button>
-        <button id="btn-gps" class="mode">GPS</button>
-      </div>
-    </div>
-  </header>
+  <!--
+    画面の作り（地図アプリでよく使われる形）
+    ・地図を画面いっぱいに出す
+    ・上：ランド／シーの切り替えと、表示する種類の切り替え（ときどき触るもの）
+    ・右下：現在地ボタン（親指が届きやすい場所）
+    ・下：引き出し（ボトムシート）。いちばん近いスポット、一覧、カードをここに出す
+  -->
 
-  <main class="main">
-    <!-- 地図がここに表示される -->
-    <div id="map"></div>
-    <!-- ランドとシーの切り替え（地図の表示場所を移す） -->
-    <button id="btn-park" class="park-toggle">シーへ</button>
-    <!-- 画面を消さないスイッチ（対応している端末だけ表示する） -->
-    <button id="btn-screen" class="screen-toggle hidden" aria-pressed="false">画面を消さない：OFF</button>
+  <!-- 地図がここに表示される -->
+  <div id="map"></div>
+
+  <!-- 上の操作 -->
+  <div class="top-controls">
+    <div class="top-row">
+      <!-- ランドとシーの切り替え（地図の表示場所を移す） -->
+      <div class="segmented park-switch" role="group" aria-label="パーク">
+        <button id="park-land" aria-pressed="true">ランド</button>
+        <button id="park-sea" aria-pressed="false">シー</button>
+      </div>
+      <!-- 方位の目印（地図を回しているので、北がどちらかを示す） -->
+      <div id="compass" class="compass" aria-label="北の方向"><span>N</span></div>
+      <!-- メニュー（ときどきしか使わない設定をまとめる） -->
+      <button id="btn-menu" class="round-btn" aria-label="メニュー" aria-haspopup="dialog">
+        <span class="menu-icon" aria-hidden="true"></span>
+      </button>
+    </div>
     <!-- 表示の切り替え：選んだ種類だけ地図に出し、通知も届く -->
-    <div id="filter" class="filter" role="group" aria-label="表示する種類">
+    <div id="filter" class="chips" role="group" aria-label="表示する種類">
       <button data-filter="all" aria-pressed="true">すべて</button>
       <button data-filter="spots" aria-pressed="false">スポット</button>
       <button data-filter="hidden" aria-pressed="false">隠れミッキー</button>
     </div>
-    <!-- 方位の目印（地図を回しているので、北がどちらかを示す） -->
-    <div id="compass" class="compass" aria-label="北の方向"><span>N</span></div>
+  </div>
 
-    <!-- 実地テスト用のデバッグ表示（GPSの誤差、各スポットまでの距離） -->
-    <section id="debug" class="debug hidden" aria-label="デバッグ表示">
-      <div id="debug-info"></div>
-      <ul id="debug-spots" class="debug-spots"></ul>
-    </section>
+  <!-- 実地テスト用のデバッグ表示（GPSの誤差、各スポットまでの距離） -->
+  <section id="debug" class="debug hidden" aria-label="デバッグ表示">
+    <div id="debug-info"></div>
+    <ul id="debug-spots" class="debug-spots"></ul>
+  </section>
 
-    <!-- スポット一覧（地図の上に重ねて表示する） -->
-    <section id="list" class="list hidden">
-      <!-- タブ：スポット（BGS・小ネタなど）と隠れミッキーを分けて見せる -->
-      <div class="tabs" role="tablist">
-        <button id="tab-spots" class="tab active" role="tab">スポット</button>
-        <button id="tab-hidden" class="tab" role="tab">隠れミッキー</button>
+  <!-- 右下：現在地に地図を戻すボタン -->
+  <button id="btn-locate" class="round-btn locate" aria-label="現在地を表示">
+    <span class="locate-icon" aria-hidden="true"></span>
+  </button>
+
+  <!-- 下の引き出し（ボトムシート）。上下にドラッグすると大きさが変わる -->
+  <section id="sheet" class="sheet" data-state="peek" aria-label="スポットの情報">
+    <!-- つまみ。タップでも大きさを切り替えられる -->
+    <button id="sheet-handle" class="sheet-handle" aria-label="引き出しを広げる"><span></span></button>
+
+    <!-- いつも見えている部分：今の状態と、GPSのスイッチ -->
+    <div class="sheet-peek">
+      <p id="status" class="status">地図をタップすると、そこに「自分」が移動します</p>
+      <div class="peek-actions">
+        <button id="btn-gps" class="btn primary gps-btn" aria-pressed="false">GPSで歩く</button>
+        <!-- 画面を消さないスイッチ（対応している端末だけ表示する） -->
+        <button id="btn-screen" class="btn screen-toggle hidden" aria-pressed="false">画面ON：OFF</button>
+      </div>
+    </div>
+
+    <div id="sheet-body" class="sheet-body">
+      <!-- スポット一覧 -->
+      <div id="list" class="list">
+        <!-- タブ：スポット（BGS・小ネタなど）と隠れミッキーを分けて見せる -->
+        <div class="tabs" role="tablist">
+          <button id="tab-spots" class="tab active" role="tab">スポット</button>
+          <button id="tab-hidden" class="tab" role="tab">隠れミッキー</button>
+        </div>
+
+        <!-- 隠れミッキーの進捗（文字と横長のバー）。隠れミッキーのタブだけに出す -->
+        <div id="list-progress-box" class="progress">
+          <p id="list-progress" class="progress-text"></p>
+          <div class="progress-bar"><div id="list-progress-fill" class="progress-fill"></div></div>
+        </div>
+        <p id="list-note" class="list-note"></p>
+        <ul id="list-items" class="list-items"></ul>
       </div>
 
-      <!-- 隠れミッキーの進捗（文字と横長のバー）。隠れミッキーのタブだけに出す -->
-      <div id="list-progress-box" class="progress">
-        <p id="list-progress" class="progress-text"></p>
-        <div class="progress-bar"><div id="list-progress-fill" class="progress-fill"></div></div>
+      <!-- スポットのカード（近づいたとき、または一覧や地図の点をタップしたときに出る） -->
+      <article id="card" class="card hidden" aria-live="polite">
+        <button id="card-close" class="back-btn">‹ 一覧にもどる</button>
+        <div class="badges">
+          <span id="card-category" class="badge"></span>
+          <span id="card-source" class="badge sub"></span>
+        </div>
+        <h2 id="card-title"></h2>
+
+        <!-- スポットの写真（spots.js に image があるときだけ） -->
+        <figure id="card-figure" class="photo hidden">
+          <img id="card-image" alt="">
+          <figcaption id="card-caption"></figcaption>
+        </figure>
+
+        <p id="card-body"></p>
+
+        <!-- 隠れミッキー：答え合わせのボタン -->
+        <div id="card-actions" class="card-actions hidden">
+          <button id="card-photo" class="btn primary">写真で答え合わせ</button>
+          <button id="card-found" class="btn">見つけた！</button>
+        </div>
+        <!-- 写真を撮る（スマホではカメラが開く）。見えない部品で、ボタンから呼び出す -->
+        <input id="photo-input" type="file" accept="image/*" capture="environment" hidden>
+
+        <!-- 撮った写真と正解の写真を並べる -->
+        <div id="compare" class="compare hidden">
+          <div class="compare-pair">
+            <figure class="photo">
+              <img id="compare-mine" alt="あなたが撮った写真">
+              <figcaption>あなたの写真</figcaption>
+            </figure>
+            <figure class="photo">
+              <img id="compare-answer" alt="正解の写真">
+              <figcaption>正解</figcaption>
+            </figure>
+          </div>
+          <p class="compare-question">同じ場所でしたか？</p>
+          <div class="card-actions">
+            <button id="compare-yes" class="btn primary">合ってた！</button>
+            <button id="compare-retry" class="btn">撮り直す</button>
+          </div>
+        </div>
+
+        <!-- 見つけたあと：自分が撮った写真 -->
+        <figure id="card-myphoto" class="photo hidden">
+          <img id="card-myphoto-img" alt="あなたが撮った写真">
+          <figcaption>あなたが撮った写真</figcaption>
+        </figure>
+
+        <!-- 隠れミッキーのカードだけに出す進捗 -->
+        <p id="card-progress" class="card-progress hidden"></p>
+      </article>
+    </div>
+  </section>
+
+  <!-- メニュー（右上の ≡ で開く） -->
+  <div id="menu" class="menu-backdrop hidden">
+    <section class="menu" role="dialog" aria-modal="true" aria-labelledby="menu-title">
+      <div class="menu-head">
+        <h2 id="menu-title">パークさんぽガイド</h2>
+        <button id="menu-close" class="close" aria-label="閉じる">×</button>
       </div>
-      <p id="list-note" class="list-note"></p>
-      <ul id="list-items" class="list-items"></ul>
 
       <!-- ネタの投稿（フォームに送ってもらい、確認してから載せる） -->
       <section id="submit-box" class="submit">
@@ -89,65 +180,18 @@
         <a id="submit-link" class="btn primary hidden" target="_blank" rel="noopener">投稿フォームを開く</a>
         <p id="submit-unready" class="submit-unready">投稿フォームは準備中です</p>
       </section>
+
+      <!-- パークでの確認用（ふだんは使わない） -->
+      <h3 class="menu-sub">確認用</h3>
+      <div class="menu-tools">
+        <button id="btn-demo" class="btn">デモ（地図タップで移動）</button>
+        <button id="btn-debug" class="btn">デバッグ表示</button>
+        <button id="btn-edit" class="btn">位置編集</button>
+      </div>
+
+      <p class="notice">非公式ファンサイトです。運営会社とは関係ありません。地図：© OpenStreetMap contributors</p>
     </section>
-  </main>
-
-  <!-- 今の状態（いちばん近いスポットまでの距離など） -->
-  <div id="status" class="status">地図をタップすると、そこに「自分」が移動します</div>
-
-  <!-- スポットに近づいたときに出てくるカード -->
-  <section id="card" class="card hidden" aria-live="polite">
-    <button id="card-close" class="close" aria-label="閉じる">×</button>
-    <div class="badges">
-      <span id="card-category" class="badge"></span>
-      <span id="card-source" class="badge sub"></span>
-    </div>
-    <h2 id="card-title"></h2>
-
-    <!-- スポットの写真（spots.js に image があるときだけ） -->
-    <figure id="card-figure" class="photo hidden">
-      <img id="card-image" alt="">
-      <figcaption id="card-caption"></figcaption>
-    </figure>
-
-    <p id="card-body"></p>
-
-    <!-- 隠れミッキー：答え合わせのボタン -->
-    <div id="card-actions" class="card-actions hidden">
-      <button id="card-photo" class="btn primary">写真で答え合わせ</button>
-      <button id="card-found" class="btn">見つけた！</button>
-    </div>
-    <!-- 写真を撮る（スマホではカメラが開く）。見えない部品で、ボタンから呼び出す -->
-    <input id="photo-input" type="file" accept="image/*" capture="environment" hidden>
-
-    <!-- 撮った写真と正解の写真を並べる -->
-    <div id="compare" class="compare hidden">
-      <div class="compare-pair">
-        <figure class="photo">
-          <img id="compare-mine" alt="あなたが撮った写真">
-          <figcaption>あなたの写真</figcaption>
-        </figure>
-        <figure class="photo">
-          <img id="compare-answer" alt="正解の写真">
-          <figcaption>正解</figcaption>
-        </figure>
-      </div>
-      <p class="compare-question">同じ場所でしたか？</p>
-      <div class="card-actions">
-        <button id="compare-yes" class="btn primary">合ってた！</button>
-        <button id="compare-retry" class="btn">撮り直す</button>
-      </div>
-    </div>
-
-    <!-- 見つけたあと：自分が撮った写真 -->
-    <figure id="card-myphoto" class="photo hidden">
-      <img id="card-myphoto-img" alt="あなたが撮った写真">
-      <figcaption>あなたが撮った写真</figcaption>
-    </figure>
-
-    <!-- 隠れミッキーのカードだけに出す進捗 -->
-    <p id="card-progress" class="card-progress hidden"></p>
-  </section>
+  </div>
 
   <!-- 位置編集モード（スポットの位置と半径を、地図の上で直す） -->
   <section id="editbar" class="editbar hidden" aria-label="位置編集">
@@ -181,13 +225,6 @@
       <button id="camera-album" class="camera-text-btn">別の方法</button>
     </div>
   </section>
-
-  <footer class="notice">
-    非公式ファンサイトです。運営会社とは関係ありません。
-    <!-- 実地テストのときだけ使うので、目立たない場所に置く -->
-    <button id="btn-debug" class="debug-toggle">デバッグ</button>
-    <button id="btn-edit" class="debug-toggle">位置編集</button>
-  </footer>
 
   <!-- 読み込む順番が大事：Leaflet → スポットのデータ → 動きのプログラム -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
