@@ -106,6 +106,22 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
 }).addTo(map);
 
+// 隠れミッキーの地図の印：番号を書いた丸。スタンプを押したもの（got）は朱色で塗る
+// divIcon … 画像の代わりに HTML で印を作る Leaflet の仕組み
+function hiddenIcon(spot, got) {
+  return L.divIcon({
+    className: "hm-pin" + (got ? " got" : ""),
+    html: spot.no.slice(1),   // "K12" → "12"
+    iconSize: [24, 24]
+  });
+}
+// スタンプの状態を、地図の印に反映する（開いたときと、スタンプを押したとき）
+function refreshHiddenIcons() {
+  SPOTS.forEach(function (spot) {
+    if (spot.category === "hidden") spotLayers[spot.id].dot.setIcon(hiddenIcon(spot, found.has(spot.id)));
+  });
+}
+
 // スポットを地図に描く（通知が来る範囲の円＋中心の点）
 // あとで位置編集モードで動かせるように、描いた円と点を spotLayers に覚えておく
 const spotLayers = {}; // スポットID → { circle, dot }
@@ -121,13 +137,16 @@ SPOTS.forEach(function (spot) {
     fillOpacity: isHidden ? 0.04 : 0.12
   }).addTo(map);
 
-  const dot = L.circleMarker([spot.lat, spot.lng], {
-    radius: isHidden ? 5 : 7,
-    color: "#fff",
-    weight: 2,
-    fillColor: color,
-    fillOpacity: 1
-  })
+  // 隠れミッキーは番号入りの丸（撮影リストと同じ番号）、ほかのスポットは色つきの点
+  const dot = (isHidden
+    ? L.marker([spot.lat, spot.lng], { icon: hiddenIcon(spot, false) })
+    : L.circleMarker([spot.lat, spot.lng], {
+        radius: 7,
+        color: "#fff",
+        weight: 2,
+        fillColor: color,
+        fillOpacity: 1
+      }))
     .addTo(map)
     .on("click", function () { showCard(spot); }); // 点をタップしても読める
 
@@ -436,8 +455,15 @@ function renderList() {
       return { spot: spot, d: d };
     });
 
-  // 位置がわかっていれば近い順に並べる
-  if (lastPos) {
+  // 並べ方：スポットは近い順。隠れミッキーは「番号順」か「近い順」を選べる
+  const byNumber = showHidden && hmSort === "number";
+  document.getElementById("hm-sort").classList.toggle("hidden", !showHidden);
+  document.querySelectorAll("#hm-sort button").forEach(function (b) {
+    b.setAttribute("aria-pressed", b.dataset.sort === hmSort ? "true" : "false");
+  });
+  if (byNumber) {
+    items.sort(function (a, b) { return hmNumber(a.spot) - hmNumber(b.spot); });
+  } else if (lastPos) {
     items.sort(function (a, b) { return a.d - b.d; });
   }
 
@@ -448,10 +474,11 @@ function renderList() {
     (p.total > 0 ? p.found / p.total * 100 : 0) + "%";
   if (showHidden) renderStampCard(items);
 
-  let note = lastPos
-    ? "近い順に並んでいます。タップすると読めます"
-    : "現在地がわかると近い順に並びます（「GPSで歩く」を押してください）";
-  if (showHidden) note += "。見つけるまでは、ヒントだけが出ます";
+  let note;
+  if (byNumber) note = "撮影リストと同じ番号順です。タップすると読めます";
+  else if (lastPos) note = "近い順に並んでいます。タップすると読めます";
+  else note = "現在地がわかると近い順に並びます（「GPSで歩く」を押してください）";
+  if (showHidden) note += "。見つけたら写真を撮るとスタンプがもらえます";
   if (items.length === 0) note = "まだありません";
   document.getElementById("list-note").textContent = note;
 
@@ -496,6 +523,27 @@ function renderList() {
   });
 }
 
+// ---------- 隠れミッキーの並べ方 ----------
+let hmSort = loadHmSort();
+function loadHmSort() {
+  try {
+    return localStorage.getItem("hmSort") === "near" ? "near" : "number";
+  } catch (e) {
+    return "number";
+  }
+}
+// "K12" → 12（番号順に並べるため）
+function hmNumber(spot) {
+  return parseInt(spot.no.slice(1), 10);
+}
+document.querySelectorAll("#hm-sort button").forEach(function (b) {
+  b.addEventListener("click", function () {
+    hmSort = b.dataset.sort;
+    try { localStorage.setItem("hmSort", hmSort); } catch (e) { /* 保存できなくても続行 */ }
+    renderList();
+  });
+});
+
 // ---------- 隠れミッキーのスタンプカード ----------
 // スタンプラリーのように、見つけた隠れミッキーの番号の丸にスタンプが押される。
 // 丸をタップすると、その隠れミッキーのヒント（見つけたあとは答え）が読める
@@ -503,9 +551,7 @@ function renderStampCard(items) {
   const box = document.getElementById("stamp-card");
   box.innerHTML = "";
   // 番号順に並べる（一覧は近い順なので、並べ直す）
-  const list = items.slice().sort(function (a, b) {
-    return parseInt(a.spot.no.slice(1), 10) - parseInt(b.spot.no.slice(1), 10);
-  });
+  const list = items.slice().sort(function (a, b) { return hmNumber(a.spot) - hmNumber(b.spot); });
   const got = list.filter(function (item) { return found.has(item.spot.id); }).length;
   box.appendChild(makeEl("p", "stamp-title",
     (showingSea ? "シー" : "ランド") + "のスタンプ " + got + " / " + list.length));
@@ -661,11 +707,9 @@ function showCard(spot) {
     figure.classList.add("hidden");
   }
 
-  // 答え合わせのボタン：正解の写真があれば「写真で答え合わせ」を主役にする
+  // 隠れミッキーは「写真を撮る」とスタンプがもらえる。答えだけ見ることもできるが、スタンプはつかない
   document.getElementById("card-actions").classList.toggle("hidden", !isHiddenUnfound);
-  photoBtn.classList.toggle("hidden", !spot.answerImage);
-  foundBtn.textContent = spot.answerImage ? "写真なしで答えを見る" : "見つけた！";
-  foundBtn.classList.toggle("primary", !spot.answerImage);
+  foundBtn.classList.remove("hidden");
   compareEl.classList.add("hidden");
 
   // 見つけたあとは、自分が撮った写真を出す（撮っていなければ出さない）
@@ -690,21 +734,26 @@ function closeCard() {
   renderList();
 }
 
-// 見つけたことにする（「見つけた！」「合ってた！」の両方から使う）
+// 見つけたことにする（写真を撮って「写っている！」を押したときだけ）＝スタンプが押される
 function markFound(spot) {
   found.add(spot.id);
   saveFound();
   showCard(spot); // 答えと、増えた進捗を表示し直す
-  renderList();   // 一覧の進捗と「発見済み」も更新
+  renderList();   // 一覧の進捗とスタンプも更新
+  refreshHiddenIcons(); // 地図の番号の丸も朱色にする
 }
 
+// 答えだけ見る：本文をヒントから答えに入れかえるだけ。記録はしないのでスタンプはつかない
 foundBtn.addEventListener("click", function () {
-  if (currentSpot) markFound(currentSpot);
+  if (!currentSpot) return;
+  document.getElementById("card-body").textContent = "答え：" + currentSpot.body;
+  foundBtn.classList.add("hidden");
 });
 
 
 // ---------- 隠れミッキーの写真で答え合わせ ----------
-// 流れ：カメラで撮る → 撮った写真と正解の写真を並べる → 自分で「合ってた！」を押す
+// 流れ：カメラで撮る → 撮った写真と正解（写真か、答えの文章）を並べる
+//       → 自分で「写っている！」を押す → 写真を保存して、スタンプを押す
 const photoBtn = document.getElementById("card-photo");
 const photoInput = document.getElementById("photo-input");
 const compareEl = document.getElementById("compare");
@@ -718,7 +767,14 @@ function handlePhoto(blob) {
   if (!currentSpot) return;
   pendingPhoto = blob;
   setImageFromBlob(document.getElementById("compare-mine"), blob);
-  document.getElementById("compare-answer").src = currentSpot.answerImage;
+  // 正解の写真があれば並べる。まだなければ、答えの文章と見比べてもらう
+  const hasAnswerImage = !!currentSpot.answerImage;
+  document.getElementById("compare-answer-figure").classList.toggle("hidden", !hasAnswerImage);
+  if (hasAnswerImage) document.getElementById("compare-answer").src = currentSpot.answerImage;
+  const answerText = document.getElementById("compare-answer-text");
+  answerText.textContent = "答え：" + currentSpot.body;
+  answerText.classList.toggle("hidden", hasAnswerImage);
+  compareEl.classList.toggle("single", !hasAnswerImage);
   document.getElementById("card-actions").classList.add("hidden");
   compareEl.classList.remove("hidden");
 }
@@ -1266,6 +1322,7 @@ applyFilterToMap();
 if (viewFilter === "hidden") listTab = "hidden";
 setMode("demo");
 renderList();
+refreshHiddenIcons();
 fitPeek();
 
 

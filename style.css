@@ -52,6 +52,20 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .leaflet-tile-pane { filter: sepia(0.25) saturate(0.85); }
 .leaflet-control-attribution { font-size: 10px; }
 
+/* 隠れミッキーの地図の印：番号入りの丸。スタンプを押したら朱色に塗る */
+.hm-pin {
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--hidden);
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--hidden);
+  font: 700 11px/1 var(--sans);
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 2px rgba(43, 33, 24, 0.3);
+}
+.hm-pin.got { background: var(--hidden); color: var(--paper-2); }
+
 /* ---------- 上の操作 ---------- */
 .top-controls {
   position: fixed;
@@ -335,6 +349,19 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 }
 .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 
+/* 隠れミッキーの並べ方の切り替え */
+.sort-toggle { display: flex; gap: 6px; margin: 0 0 8px; }
+.sort-toggle button {
+  height: 30px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 15px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+.sort-toggle button[aria-pressed="true"] { background: var(--ink); color: var(--paper-2); }
+
 /* 隠れミッキーの進捗 */
 .progress {
   margin-bottom: 12px;
@@ -443,6 +470,11 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .compare-pair .photo { margin: 0; }
 .compare-pair .photo img { height: 150px; }
 .compare .compare-question { margin-top: 10px; text-align: center; font-weight: 700; }
+/* 正解の写真がないときは、自分の写真を大きく1枚だけ出す */
+.compare.single .compare-pair { grid-template-columns: 1fr; }
+.compare.single .compare-pair .photo img { height: 220px; }
+.card .compare-answer-text { margin-top: 10px; padding: 8px 10px; border: 1px dashed var(--rule); font-size: 14px; line-height: 1.7; white-space: pre-line; }
+.btn.sub-btn { border-color: var(--rule); color: var(--ink-soft); font-size: 13px; padding: 9px; }
 
 .card-progress { margin: 10px 0 0; font-size: 13px; color: var(--ink-soft); }
 .card .card-progress { font-family: var(--sans); font-size: 12px; line-height: 1.5; }
