@@ -351,6 +351,29 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   transition: width 0.3s ease-out;
 }
 
+/* 隠れミッキーのスタンプカード：番号の丸が並び、見つけると朱色のスタンプが押される */
+.stamp-card { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--rule); }
+.stamp-title { margin: 0 0 8px; font-family: var(--serif); font-size: 14px; font-weight: 700; }
+.stamp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; }
+.stamp {
+  aspect-ratio: 1;
+  border: 1.5px dashed var(--rule);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+}
+/* 押されたスタンプ：二重の輪で、少し傾ける */
+.stamp.got {
+  border: 2px solid var(--accent);
+  box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 3.5px var(--accent);
+  color: var(--accent);
+  transform: rotate(-12deg);
+}
+
 /* ---------- スポットのカード（引き出しの中に出す） ---------- */
 .card { animation: fadeIn 0.2s ease-out; }
 @keyframes fadeIn {

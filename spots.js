@@ -440,18 +440,6 @@ const SPOTS = [
     category: "trivia",
     source: "official",
     body: "・地底へ降りる「テラヴェーター」は地下800mまで行く。名前は、ラテン語の「地球」と「エレベーター」を合わせた言葉。\n・「地下800mへ降りる」はずのテラヴェーターは、実は上に昇っている。"
-  },
-  {
-    // 答え合わせ機能の見本。本物の隠れミッキーを入れたら消す
-    id: "hidden-1",
-    name: "隠れミッキー その1（仮の位置）",
-    lat: 35.6318,
-    lng: 139.8800,
-    radius: 30,
-    category: "hidden",
-    source: "official",
-    hint: "【サンプル】この付近に隠れミッキーがあるよ。〇〇のあたりを探してみて！",
-    body: "【サンプル】答え：ここに具体的な場所の説明が入ります。",
-    answerImage: "images/sample-answer.jpg"
   }
 ];
+// 隠れミッキーは hidden-mickeys.js にまとめてある（ここに足される）

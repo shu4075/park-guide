@@ -21,6 +21,13 @@ const LAND_BEARING = 156;
 const SEA_BEARING = 245;
 const START_ZOOM = 17;                    // 最初の拡大率（大きいほど拡大）
 const LEAVE_MARGIN = 10;                  // 範囲から「出た」と判定するための余裕（m）
+// 通知が来る範囲は、spots.js の radius より少し広くする（目の前の通路くらいで反応するように）。
+// GPS は 10〜20m くらいずれることがあるので、その分の余裕でもある。
+// 反応が早すぎる・遅すぎると思ったら、この数字を変える
+const RANGE_EXTRA = 20;
+function triggerRadius(spot) {
+  return spot.radius + RANGE_EXTRA;
+}
 
 // ネタ投稿フォーム（Googleフォーム）のURL。作ったらここに貼る。空のあいだは「準備中」と出る
 const SUBMIT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdr7NfbE_rhEpXQCxitHDnj_TjymBwOxM5hxLAieCPCsdjFmw/viewform";
@@ -33,8 +40,9 @@ const CATEGORY = {
   food:   { label: "おすすめメニュー", color: "#9a6b1f" }
 };
 const SOURCE = {
-  official: "公式情報",
-  theory:   "諸説あり"
+  official:   "公式情報",
+  theory:     "諸説あり",
+  unverified: "未確認"     // ネットの情報をもとにしていて、まだ現地で確かめていないもの
 };
 
 
@@ -98,21 +106,23 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
 }).addTo(map);
 
-// スポットを地図に描く（反応する範囲の円＋中心の点）
+// スポットを地図に描く（通知が来る範囲の円＋中心の点）
 // あとで位置編集モードで動かせるように、描いた円と点を spotLayers に覚えておく
 const spotLayers = {}; // スポットID → { circle, dot }
 SPOTS.forEach(function (spot) {
   const color = CATEGORY[spot.category].color;
+  // 隠れミッキーは数が多いので、点を小さく、円を薄くして地図がごちゃごちゃしないようにする
+  const isHidden = spot.category === "hidden";
 
   const circle = L.circle([spot.lat, spot.lng], {
-    radius: spot.radius,
+    radius: triggerRadius(spot),
     color: color,
-    weight: 1,
-    fillOpacity: 0.12
+    weight: isHidden ? 0 : 1,
+    fillOpacity: isHidden ? 0.04 : 0.12
   }).addTo(map);
 
   const dot = L.circleMarker([spot.lat, spot.lng], {
-    radius: 7,
+    radius: isHidden ? 5 : 7,
     color: "#fff",
     weight: 2,
     fillColor: color,
@@ -134,6 +144,7 @@ function showPark(sea) {
   setMapBearing(sea ? SEA_BEARING : LAND_BEARING);
   btnLand.setAttribute("aria-pressed", sea ? "false" : "true");
   btnSea.setAttribute("aria-pressed", sea ? "true" : "false");
+  renderList(); // 隠れミッキーの一覧とスタンプカードを、選んだパークのものにする
 }
 btnLand.addEventListener("click", function () { showPark(false); });
 btnSea.addEventListener("click", function () { showPark(true); });
@@ -274,10 +285,10 @@ function updatePosition(lat, lng, accuracy) {
 
     if (d < nearestDist) { nearest = spot; nearestDist = d; }
 
-    if (d <= spot.radius && !inside.has(spot.id)) {
+    if (d <= triggerRadius(spot) && !inside.has(spot.id)) {
       inside.add(spot.id);
       entered.push({ spot: spot, d: d });
-    } else if (d > spot.radius + LEAVE_MARGIN) {
+    } else if (d > triggerRadius(spot) + LEAVE_MARGIN) {
       inside.delete(spot.id); // 十分離れたら、次に来たときまた通知する
     }
   });
@@ -416,8 +427,10 @@ function renderList() {
   document.getElementById("list-progress-box").classList.toggle("hidden", !showHidden);
 
   // 今のタブのスポットだけを取り出して、「自分からの距離」をつける（位置がまだわからなければ null）
+  // 隠れミッキーは数が多いので、今地図で見ているパーク（ランド／シー）のものだけを出す
   const items = SPOTS
     .filter(function (spot) { return (spot.category === "hidden") === showHidden; })
+    .filter(function (spot) { return !showHidden || spot.park === (showingSea ? "sea" : "land"); })
     .map(function (spot) {
       const d = lastPos ? distanceMeters(lastPos.lat, lastPos.lng, spot.lat, spot.lng) : null;
       return { spot: spot, d: d };
@@ -433,6 +446,7 @@ function renderList() {
   document.getElementById("list-progress").textContent = progressText();
   document.getElementById("list-progress-fill").style.width =
     (p.total > 0 ? p.found / p.total * 100 : 0) + "%";
+  if (showHidden) renderStampCard(items);
 
   let note = lastPos
     ? "近い順に並んでいます。タップすると読めます"
@@ -480,6 +494,30 @@ function renderList() {
     li.appendChild(btn);
     ul.appendChild(li);
   });
+}
+
+// ---------- 隠れミッキーのスタンプカード ----------
+// スタンプラリーのように、見つけた隠れミッキーの番号の丸にスタンプが押される。
+// 丸をタップすると、その隠れミッキーのヒント（見つけたあとは答え）が読める
+function renderStampCard(items) {
+  const box = document.getElementById("stamp-card");
+  box.innerHTML = "";
+  // 番号順に並べる（一覧は近い順なので、並べ直す）
+  const list = items.slice().sort(function (a, b) {
+    return parseInt(a.spot.no.slice(1), 10) - parseInt(b.spot.no.slice(1), 10);
+  });
+  const got = list.filter(function (item) { return found.has(item.spot.id); }).length;
+  box.appendChild(makeEl("p", "stamp-title",
+    (showingSea ? "シー" : "ランド") + "のスタンプ " + got + " / " + list.length));
+  const grid = makeEl("div", "stamp-grid", "");
+  list.forEach(function (item) {
+    const isFound = found.has(item.spot.id);
+    const b = makeEl("button", "stamp" + (isFound ? " got" : ""), item.spot.no.slice(1));
+    b.setAttribute("aria-label", item.spot.name + (isFound ? "（発見済み）" : ""));
+    b.addEventListener("click", function () { showCard(item.spot); });
+    grid.appendChild(b);
+  });
+  box.appendChild(grid);
 }
 
 // 投稿フォームのURLが設定されていれば、ボタンを出す
@@ -564,11 +602,11 @@ function renderDebug() {
     })
     .sort(function (a, b) { return a.d - b.d; })
     .forEach(function (item) {
-      const isIn = item.d <= item.spot.radius;
+      const isIn = item.d <= triggerRadius(item.spot);
       const li = document.createElement("li");
       li.append(
         makeEl("span", "name", item.spot.name),
-        makeEl("span", "", Math.round(item.d) + "m / " + item.spot.radius + "m"),
+        makeEl("span", "", Math.round(item.d) + "m / " + triggerRadius(item.spot) + "m"),
         makeEl("span", isIn ? "in" : "", isIn ? "圏内" : "　　")
       );
       ul.appendChild(li);
@@ -1029,7 +1067,8 @@ function renderEditBar() {
   const edited = spotEdits[editSpot.id] ? "（直し中）" : "";
   document.getElementById("edit-target").textContent = editSpot.name + edited;
   document.getElementById("edit-values").textContent =
-    "緯度 " + editSpot.lat + "　経度 " + editSpot.lng + "　半径 " + editSpot.radius + "m";
+    "緯度 " + editSpot.lat + "　経度 " + editSpot.lng + "　半径 " + editSpot.radius + "m" +
+    "（通知はその外側" + RANGE_EXTRA + "mまで）";
   controls.classList.remove("hidden");
 }
 
@@ -1087,7 +1126,7 @@ document.getElementById("edit-close").addEventListener("click", stopEdit);
 function changeRadius(delta) {
   if (!editSpot) return;
   editSpot.radius = Math.max(5, editSpot.radius + delta);
-  spotLayers[editSpot.id].circle.setRadius(editSpot.radius);
+  spotLayers[editSpot.id].circle.setRadius(triggerRadius(editSpot));
   saveSpotEdit(editSpot);
 }
 document.getElementById("edit-radius-down").addEventListener("click", function () { changeRadius(-5); });
@@ -1109,7 +1148,7 @@ document.getElementById("edit-reset").addEventListener("click", function () {
   if (!editSpot) return;
   const o = ORIGINAL[editSpot.id];
   editSpot.radius = o.radius;
-  spotLayers[editSpot.id].circle.setRadius(o.radius);
+  spotLayers[editSpot.id].circle.setRadius(triggerRadius(editSpot));
   moveSpot(editSpot, o.lat, o.lng);
   spotLayers[editSpot.id].handle.setLatLng([o.lat, o.lng]);
   saveSpotEdit(editSpot);
