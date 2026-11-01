@@ -8,6 +8,7 @@
 //   lat, lng … 緯度・経度
 //              Googleマップで場所を右クリック → 一番上の数字をクリックでコピーできます
 //   radius   … 何メートル以内に入ったら反応するか
+//   park     … "land"（ランド） / "sea"（シー）。番号はパークごとに 1 から振られる
 //   category … "bgs"（BGS＝バックグラウンドストーリー） / "hidden"（隠れミッキー） / "trivia"（小ネタ）
 //              / "food"（おすすめメニュー）
 //   source   … "official"（公式情報） / "theory"（諸説あり・ファンの考察）
@@ -35,6 +36,7 @@ const SPOTS = [
     lat: 35.635304,
     lng: 139.879029,
     radius: 40,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "舞浜が選ばれたのは、場所的に雨が少ないから。"
@@ -45,6 +47,7 @@ const SPOTS = [
     lat: 35.634615,
     lng: 139.879437,
     radius: 25,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・建物の窓は、上に行くほど小さくなっている。\n・ワールドバザールに屋根があるのは東京だけ。\n・開園日は雨だったので、開園式は屋根のあるワールドバザールで行われた。\n・三井住友銀行のとなりの奥まった扉は、地図にのっていない会員制レストラン「クラブ33」の入口。外から扉だけ見られる。"
@@ -55,6 +58,7 @@ const SPOTS = [
     lat: 35.634305,
     lng: 139.880676,
     radius: 20,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・船は全部で45隻あり、どれにも女性の名前がついている。\n・出発するところでは、流れ星が流れる。\n・奥には、香水などが買えるショップがある。\n・中に出てくる「チャーリー・サム」は、ビッグサンダー・マウンテンの「セドナ・サム」の兄弟という設定。"
@@ -65,6 +69,7 @@ const SPOTS = [
     lat: 35.634185,
     lng: 139.881167,
     radius: 15,
+    park: "land",
     category: "food",
     body: "ガンボスープがおいしい。"
   },
@@ -74,6 +79,7 @@ const SPOTS = [
     lat: 35.633983,
     lng: 139.881795,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "時期によって難易度が変わる。"
@@ -84,6 +90,7 @@ const SPOTS = [
     lat: 35.633876,
     lng: 139.882382,
     radius: 15,
+    park: "land",
     category: "bgs",
     source: "official",
     body: "サムは、売り物を3回変えている（生首、像、お守り）。"
@@ -94,6 +101,7 @@ const SPOTS = [
     lat: 35.6331,
     lng: 139.8822,
     radius: 15,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "椅子が暖かい。"
@@ -105,6 +113,7 @@ const SPOTS = [
     lat: 35.633316,
     lng: 139.88191,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "ツリーハウスの穴から、虎の鳴き声が聞こえる。"
@@ -115,6 +124,7 @@ const SPOTS = [
     lat: 35.633084,
     lng: 139.881846,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "2つのエリアのBGMが混ざらないようにしている。"
@@ -125,6 +135,7 @@ const SPOTS = [
     lat: 35.6337,
     lng: 139.8824,
     radius: 15,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・本物の蒸気で走っている。\n・ランドの周辺を歩いていると、汽笛の音が聞こえる。\n・駅はアドベンチャーランドにしかない。当時の法律では、お金を取らないと駅を2つ作れなかったから。"
@@ -135,6 +146,7 @@ const SPOTS = [
     lat: 35.6326,
     lng: 139.8833,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "ラッキーの的がある。"
@@ -145,6 +157,7 @@ const SPOTS = [
     lat: 35.632382,
     lng: 139.883235,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・乗り場の横の蒸気トラクターは、レプリカではなく1898年製の本物。持ち主の奥さんが「トラクターより旅行に行きたい」と言ったので、譲ってもらえた。\n・山の高さは33m、コースは1,000m、最高時速は42km。\n・巻き上げの途中でキラキラ光っているのは、金の鉱脈。\n・コースには、オポッサム、コヨーテ、ビッグホーンシープ、コウモリ、ガラガラヘビがいる。\n・山にいる「セドナ・サム」は、カリブの海賊の「チャーリー・サム」の兄弟という設定。\n・セドナ・サムは乗っているときには見えない場所にいて、マークトウェイン号やウエスタンリバー鉄道から見える。"
@@ -155,6 +168,7 @@ const SPOTS = [
     lat: 35.631611,
     lng: 139.882936,
     radius: 20,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・開園のとき、アメリカのミシシッピ川から汲んできた水が注がれた。\n・マークトウェイン号は法律上の「船」として登録されているので、船体の前と後ろに船名と「浦安市」の表示がある。"
@@ -165,6 +179,7 @@ const SPOTS = [
     lat: 35.631941,
     lng: 139.883726,
     radius: 15,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "島が暗くなるので、いかだは日没で運航を終える。"
@@ -175,6 +190,7 @@ const SPOTS = [
     lat: 35.631268,
     lng: 139.882432,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・1992年にできた、6番目のテーマランド。\n・もとはスプラッシュ・マウンテンだけの計画だったが、アメリカのディズニー側の意向で、エリアごと作ることになった。"
@@ -185,6 +201,7 @@ const SPOTS = [
     lat: 35.630888,
     lng: 139.882907,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・最後の落下は、高さ約16m・傾き45度・時速約62kmで、ランドでいちばん速い。\n・山はもともと「チカピンヒル」という丘。密造酒の蒸留器が爆発してダムが壊れ、「水しぶきの山」と呼ばれるようになった。\n・ランドで水しぶきを浴びるのはここだけ。水の量は日本の気候に合わせて調整している。"
@@ -195,6 +212,7 @@ const SPOTS = [
     lat: 35.632085,
     lng: 139.880844,
     radius: 40,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・高さは約51m。てっぺんには業務用の無線アンテナがある。\n・上に行くほど石垣や窓が小さくなっていて、実際より高く見える。\n・1階の通路のモザイク画には、ディズニーのデザイナーの顔が描かれていて、本物の宝石も使われている。\n・いちばん高い金色の塔は、ウォルトがアメリカの「眠れる森の美女の城」の金色の塔を気に入っていたことから。"
@@ -205,6 +223,7 @@ const SPOTS = [
     lat: 35.631126,
     lng: 139.88183,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・屋敷には999人の幽霊がいて、1,000人目の仲間を探している。\n・出口のお墓の名前は、英語のダジャレになっている（例：「Harry After」＝here after）。\n・待ち時間が「4分」「9分」「13分」のような、縁起の悪い数字で表示されることがある。\n・乗り物の名前「ドゥームバギー」は、「死の車」という意味。"
@@ -215,6 +234,7 @@ const SPOTS = [
     lat: 35.630744,
     lng: 139.880183,
     radius: 15,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・最後の場面では、ハチミツの香りがする。\n・開園記念日の4月15日にオープンする予定だったが、技術的なトラブルで2000年9月1日になった。"
@@ -225,6 +245,7 @@ const SPOTS = [
     lat: 35.630203,
     lng: 139.878821,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "オルガンの楽譜にはミッキーのマークが流れているが、1つだけグーフィーのマークが混ざっている。"
@@ -235,6 +256,7 @@ const SPOTS = [
     lat: 35.633065,
     lng: 139.878355,
     radius: 40,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "未来っぽいデザインは、開園した1983年ごろに考えられていた「未来」。"
@@ -245,6 +267,7 @@ const SPOTS = [
     lat: 35.6308,
     lng: 139.880885,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・入口の時計塔は15分ごとにからくりが動き、世界の子どもの人形が出てきて時刻を知らせる。\n・2018年のリニューアルで、ディズニー映画18作品のキャラクター約40体が仲間入りした。"
@@ -255,6 +278,7 @@ const SPOTS = [
     lat: 35.631497,
     lng: 139.88091,
     radius: 10,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "待ち列の壁の楽譜は「ミッキーマウス・マーチ」、大きな五線譜は「魔法使いの弟子」。"
@@ -265,6 +289,7 @@ const SPOTS = [
     lat: 35.631192,
     lng: 139.878221,
     radius: 35,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "この場所には、もとは「グランドサーキット・レースウェイ」があった。"
@@ -275,6 +300,7 @@ const SPOTS = [
     lat: 35.629583,
     lng: 139.880159,
     radius: 25,
+    park: "land",
     category: "bgs",
     source: "official",
     body: "道にまかれている「ディップ」は、トゥーンを溶かしてしまう液体。"
@@ -285,6 +311,7 @@ const SPOTS = [
     lat: 35.630582,
     lng: 139.878711,
     radius: 15,
+    park: "land",
     category: "bgs",
     source: "official",
     body: "ガラクタを集めて作ったという設定なので、日用品っぽい部品があちこちに使われている。"
@@ -295,6 +322,7 @@ const SPOTS = [
     lat: 35.633876,
     lng: 139.87853,
     radius: 25,
+    park: "land",
     category: "trivia",
     source: "official",
     body: "・オレンジの毛でヘルメットをかぶった、このアトラクションだけのモンスター「ロッキー」が、いろいろな場面に隠れている。\n・映画では足しか映らなかった大きなモンスター「テッド」の全身が、街の中に出てくる。"
@@ -307,6 +335,7 @@ const SPOTS = [
     lat: 35.62707,
     lng: 139.887993,
     radius: 50,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "日本で初めての、パークと一体になったホテル。"
@@ -317,6 +346,7 @@ const SPOTS = [
     lat: 35.625619,
     lng: 139.887128,
     radius: 15,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "ゴンドラでこの橋の下をくぐるとき、目を閉じて願いごとをすると叶うと言われている。"
@@ -327,6 +357,7 @@ const SPOTS = [
     lat: 35.625769,
     lng: 139.885185,
     radius: 35,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "・「チェインバー・オブ・プラネット」では、ハンドルを回して水星から土星までを動かせる。\n・ガリオン船「ルネサンス号」では、大砲を操作して撃つまねができる。"
@@ -337,6 +368,7 @@ const SPOTS = [
     lat: 35.623445,
     lng: 139.886882,
     radius: 50,
+    park: "sea",
     category: "bgs",
     source: "official",
     body: "・ニューヨークのエリアは、馬車から自動車へ、ガス灯から電灯へと変わっていく時代が舞台。\n・S.S.コロンビア号は、出港直前の最新型の豪華客船という設定。"
@@ -347,6 +379,7 @@ const SPOTS = [
     lat: 35.624053,
     lng: 139.888199,
     radius: 40,
+    park: "sea",
     category: "bgs",
     source: "official",
     body: "・ホテルハイタワーは、大富豪ハリソン・ハイタワー三世が1892年に開いた。\n・建物は、ゴシック、ヴィクトリア朝、ムガール、ムーアなど、ハイタワーが旅先で気に入った建築様式のごちゃまぜ。\n・ハイタワー三世は、1899年12月31日の記者会見のあと、エレベーターの中から消えた。\n・出口のショップは、ホテルの室内プール「ラジャのプール」を改装した設定で、飛び込み台が残っている。\n・高さには「航空法」が関係している。高い建物には飛行機向けの赤いランプをつける決まりがあり、それだと1912年のホテルの雰囲気が壊れるので、ランプがいらない高さにおさえた。\n・ホテルの従業員（キャスト）は、エレベーターが落ちることを知らないまま、お客さんを見送っているという設定。"
@@ -357,6 +390,7 @@ const SPOTS = [
     lat: 35.624785,
     lng: 139.888956,
     radius: 25,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "・ウッディの口から入ると、おもちゃの大きさに縮むという設定。\n・まわりのトイビル・トロリーパークのモデルは、ニューヨーク・ブルックリンにあった遊園地「ルナパーク」。\n・入口の大きな絵本に描かれたバーコードは、本物のDVDのバーコード。\n・3Dメガネを受け取る場所には、ゲームの空き箱が使われている（おもちゃの世界なので）。"
@@ -367,6 +401,7 @@ const SPOTS = [
     lat: 35.624913,
     lng: 139.882534,
     radius: 30,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "建物の入口のモニュメントの魚の影の中に、ニモ、マーリン、クラッシュ、スクワートがかくれている。"
@@ -377,6 +412,7 @@ const SPOTS = [
     lat: 35.626764,
     lng: 139.880971,
     radius: 40,
+    park: "sea",
     category: "bgs",
     source: "official",
     body: "・このツアーは、助手のパコが博士の警告を無視して勝手に集めた観光ツアー。\n・乗ってすぐ、大きく左に曲がる手前で右の壁を見ると、「若さの泉」の青い光が映っている。"
@@ -387,6 +423,7 @@ const SPOTS = [
     lat: 35.627644,
     lng: 139.880926,
     radius: 35,
+    park: "sea",
     category: "bgs",
     source: "official",
     body: "・2体の石像は、火の神「イクチュラコアトル」と水の神「アクトゥリクトゥリ」。\n・石像の顔を向かい合わせてはいけなかったのに、発掘チームが向かい合わせたので、神々が怒った。\n・一回転のループは、レールが神の力でねじ曲げられてできた。"
@@ -397,6 +434,7 @@ const SPOTS = [
     lat: 35.628571,
     lng: 139.881589,
     radius: 30,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "・曲「コンパス・オブ・ユア・ハート」は、『アラジン』のアラン・メンケンがこのアトラクションのために作った。\n・途中で、バナナの甘い香りがする。目と耳だけでなく、鼻でも楽しめる。"
@@ -407,6 +445,7 @@ const SPOTS = [
     lat: 35.626987,
     lng: 139.882956,
     radius: 25,
+    park: "sea",
     category: "bgs",
     source: "official",
     body: "・お城はサンゴでできていて、海から上がってきたばかりという設定。\n・城に入ると、2頭のイルカが引く戦車に乗ったトリトン王の金色の像がある。そこでトリトン王が魔法をかけて、海の中でも息ができるようになっている。"
@@ -417,6 +456,7 @@ const SPOTS = [
     lat: 35.627275,
     lng: 139.88321,
     radius: 15,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "スカットルは、望遠鏡を反対側から覗いている。"
@@ -427,6 +467,7 @@ const SPOTS = [
     lat: 35.628987,
     lng: 139.879299,
     radius: 35,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "ラプンツェルのセリフと歌は、中川翔子さん。"
@@ -437,6 +478,7 @@ const SPOTS = [
     lat: 35.625770,
     lng: 139.884080,
     radius: 35,
+    park: "sea",
     category: "trivia",
     source: "official",
     body: "・地底へ降りる「テラヴェーター」は地下800mまで行く。名前は、ラテン語の「地球」と「エレベーター」を合わせた言葉。\n・「地下800mへ降りる」はずのテラヴェーターは、実は上に昇っている。"

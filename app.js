@@ -106,49 +106,69 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
 }).addTo(map);
 
-// 隠れミッキーの地図の印：番号を書いた丸。スタンプを押したもの（got）は朱色で塗る
+// ---------- 番号 ----------
+// ランドとシーで、それぞれ 1 から数える。スポット（BGS・小ネタなど）と隠れミッキーも別々に数える
+// 例：ランドのスポット 1〜27、ランドの隠れミッキー 1〜52、シーのスポット 1〜14 …
+(function () {
+  const count = {};
+  SPOTS.forEach(function (spot) {
+    const key = spot.park + (spot.category === "hidden" ? "-hidden" : "-spot");
+    count[key] = (count[key] || 0) + 1;
+    spot.num = count[key];
+  });
+})();
+// 画面に出す名前（番号つき）
+function displayName(spot) {
+  return spot.num + "　" + spot.name;
+}
+
+// 地図の印：番号を書いた丸。
+//   スポット … カテゴリの色で塗った丸
+//   隠れミッキー … 白い丸に朱色の番号。スタンプを押したもの（got）は朱色で塗る
 // divIcon … 画像の代わりに HTML で印を作る Leaflet の仕組み
-function hiddenIcon(spot, got) {
+function pinIcon(spot, got) {
+  const isHidden = spot.category === "hidden";
   return L.divIcon({
-    className: "hm-pin" + (got ? " got" : ""),
-    html: spot.no.slice(1),   // "K12" → "12"
+    className: "pin " + (isHidden ? "pin-hidden" : "pin-spot") + (got ? " got" : ""),
+    html: '<span style="--c:' + CATEGORY[spot.category].color + '">' + spot.num + "</span>",
     iconSize: [24, 24]
   });
 }
 // スタンプの状態を、地図の印に反映する（開いたときと、スタンプを押したとき）
 function refreshHiddenIcons() {
   SPOTS.forEach(function (spot) {
-    if (spot.category === "hidden") spotLayers[spot.id].dot.setIcon(hiddenIcon(spot, found.has(spot.id)));
+    if (spot.category === "hidden") spotLayers[spot.id].dot.setIcon(pinIcon(spot, found.has(spot.id)));
   });
 }
 
-// スポットを地図に描く（通知が来る範囲の円＋中心の点）
-// あとで位置編集モードで動かせるように、描いた円と点を spotLayers に覚えておく
+// 引いて見ているとき（拡大率が小さいとき）は印を小さくして、地図を見やすくする
+// 仕組み：拡大率に合わせて、地図の入れ物に "zoom-far" / "zoom-mid" という目印をつけ、style.css で大きさを変える
+function applyZoomClass() {
+  const z = map.getZoom();
+  const el = map.getContainer();
+  el.classList.toggle("zoom-far", z < 17);
+  el.classList.toggle("zoom-mid", z >= 17 && z < 18);
+}
+map.on("zoomend", applyZoomClass);
+applyZoomClass();
+
+// スポットを地図に描く（番号の印＋通知が来る範囲の円）
+// 円はデバッグ表示か位置編集のときだけ出す（いつも出すと地図が見にくいので）
+// あとで位置編集モードで動かせるように、描いた円と印を spotLayers に覚えておく
 const spotLayers = {}; // スポットID → { circle, dot }
 SPOTS.forEach(function (spot) {
   const color = CATEGORY[spot.category].color;
-  // 隠れミッキーは数が多いので、点を小さく、円を薄くして地図がごちゃごちゃしないようにする
-  const isHidden = spot.category === "hidden";
 
   const circle = L.circle([spot.lat, spot.lng], {
     radius: triggerRadius(spot),
     color: color,
-    weight: isHidden ? 0 : 1,
-    fillOpacity: isHidden ? 0.04 : 0.12
-  }).addTo(map);
+    weight: 1,
+    fillOpacity: 0.1
+  });
 
-  // 隠れミッキーは番号入りの丸（撮影リストと同じ番号）、ほかのスポットは色つきの点
-  const dot = (isHidden
-    ? L.marker([spot.lat, spot.lng], { icon: hiddenIcon(spot, false) })
-    : L.circleMarker([spot.lat, spot.lng], {
-        radius: 7,
-        color: "#fff",
-        weight: 2,
-        fillColor: color,
-        fillOpacity: 1
-      }))
+  const dot = L.marker([spot.lat, spot.lng], { icon: pinIcon(spot, false) })
     .addTo(map)
-    .on("click", function () { showCard(spot); }); // 点をタップしても読める
+    .on("click", function () { showCard(spot); }); // 印をタップしても読める
 
   spotLayers[spot.id] = { circle: circle, dot: dot };
 });
@@ -200,13 +220,13 @@ function isShown(spot) {
   return true;
 }
 
-// 地図の円と点を、対象のものだけ表示する
+// 地図の印と円を、対象のものだけ表示する（円はデバッグ表示か位置編集のときだけ）
 function applyFilterToMap() {
+  const showCircles = debugOn || editOn;
   SPOTS.forEach(function (spot) {
     const layers = spotLayers[spot.id];
-    [layers.circle, layers.dot].forEach(function (layer) {
-      if (isShown(spot)) layer.addTo(map); else layer.remove();
-    });
+    if (isShown(spot)) layers.dot.addTo(map); else layers.dot.remove();
+    if (isShown(spot) && showCircles) layers.circle.addTo(map); else layers.circle.remove();
   });
   document.querySelectorAll("#filter button").forEach(function (b) {
     b.setAttribute("aria-pressed", b.dataset.filter === viewFilter ? "true" : "false");
@@ -321,7 +341,7 @@ function updatePosition(lat, lng, accuracy) {
   }
 
   if (nearest) {
-    setStatus("いちばん近いスポット：" + nearest.name + "（約" + Math.round(nearestDist) + "m）");
+    setStatus("いちばん近いスポット：" + displayName(nearest) + "（約" + Math.round(nearestDist) + "m）");
   }
 
   renderList();               // 一覧の並び順と距離を更新
@@ -498,7 +518,7 @@ function renderList() {
 
     const name = document.createElement("span");
     name.className = "list-name";
-    name.textContent = item.spot.name;
+    name.textContent = displayName(item.spot);
 
     const dist = document.createElement("span");
     dist.className = "list-dist";
@@ -532,9 +552,9 @@ function loadHmSort() {
     return "number";
   }
 }
-// "K12" → 12（番号順に並べるため）
+// 番号順に並べるための番号（パークごとの番号）
 function hmNumber(spot) {
-  return parseInt(spot.no.slice(1), 10);
+  return spot.num;
 }
 document.querySelectorAll("#hm-sort button").forEach(function (b) {
   b.addEventListener("click", function () {
@@ -558,8 +578,8 @@ function renderStampCard(items) {
   const grid = makeEl("div", "stamp-grid", "");
   list.forEach(function (item) {
     const isFound = found.has(item.spot.id);
-    const b = makeEl("button", "stamp" + (isFound ? " got" : ""), item.spot.no.slice(1));
-    b.setAttribute("aria-label", item.spot.name + (isFound ? "（発見済み）" : ""));
+    const b = makeEl("button", "stamp" + (isFound ? " got" : ""), String(item.spot.num));
+    b.setAttribute("aria-label", displayName(item.spot) + (isFound ? "（発見済み）" : ""));
     b.addEventListener("click", function () { showCard(item.spot); });
     grid.appendChild(b);
   });
@@ -651,7 +671,7 @@ function renderDebug() {
       const isIn = item.d <= triggerRadius(item.spot);
       const li = document.createElement("li");
       li.append(
-        makeEl("span", "name", item.spot.name),
+        makeEl("span", "name", displayName(item.spot)),
         makeEl("span", "", Math.round(item.d) + "m / " + triggerRadius(item.spot) + "m"),
         makeEl("span", isIn ? "in" : "", isIn ? "圏内" : "　　")
       );
@@ -662,6 +682,7 @@ function renderDebug() {
 function applyDebug() {
   debugEl.classList.toggle("hidden", !debugOn);
   btnDebug.classList.toggle("on", debugOn);
+  applyFilterToMap(); // 通知が来る範囲の円を出す／しまう
   if (debugOn) renderDebug();
 }
 
@@ -691,7 +712,7 @@ function showCard(spot) {
   srcEl.classList.toggle("theory", spot.source === "theory");
   srcEl.classList.toggle("hidden", !spot.source); // おすすめメニューなど、source がなければ札を出さない
 
-  document.getElementById("card-title").textContent = spot.name;
+  document.getElementById("card-title").textContent = displayName(spot);
 
   // 隠れミッキーで、まだ見つけていなければ「ヒント」だけ見せる
   const isHiddenUnfound = spot.category === "hidden" && !found.has(spot.id);
@@ -997,7 +1018,7 @@ function notifyNearby(spot) {
   // 通知は Service Worker から出す（Android の Chrome はこの方法しか受け付けない）
   navigator.serviceWorker.ready.then(function (reg) {
     reg.showNotification("近くに" + CATEGORY[spot.category].label + "があります", {
-      body: spot.name + "　立ち止まって読んでみてください",
+      body: displayName(spot) + "　立ち止まって読んでみてください",
       icon: "icons/icon-192.png",
       tag: spot.id // 同じスポットの通知は1つにまとめる
     });
@@ -1011,15 +1032,29 @@ function stopGps() {
   }
 }
 
-// 下の大きなボタン1つで GPS をつけたり消したりする（消すとデモにもどる）
+// 「GPSで歩く」ボタンで GPS をつけたり消したりする（消すとデモにもどる）
+// 最初の1回だけ下の引き出しに大きく出し、一度押したら右上のメニューの中だけにする。
+// 前回 GPS を使っていたら、次に開いたときは自動で GPS をつける（毎回メニューを開かなくていいように）
 const btnDemo = document.getElementById("btn-demo");
 const btnGps = document.getElementById("btn-gps");
+const btnGpsMenu = document.getElementById("btn-gps-menu");
+
+function loadSetting(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function saveSetting(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) { /* 保存できなくても続行 */ }
+}
 
 function setMode(newMode) {
   mode = newMode;
+  saveSetting("lastMode", mode);
   const gps = mode === "gps";
-  btnGps.setAttribute("aria-pressed", gps ? "true" : "false");
-  btnGps.textContent = gps ? "GPSで案内中（止める）" : "GPSで歩く";
+  [btnGps, btnGpsMenu].forEach(function (b) {
+    b.setAttribute("aria-pressed", gps ? "true" : "false");
+    b.textContent = gps ? "GPSで案内中（止める）" : "GPSで歩く";
+  });
+  btnGpsMenu.classList.toggle("primary", !gps);
   btnDemo.classList.toggle("on", !gps);
   if (gps) {
     startGps();
@@ -1034,6 +1069,17 @@ function setMode(newMode) {
 
 btnGps.addEventListener("click", function () {
   setMode(mode === "gps" ? "demo" : "gps");
+  // 一度使ったら、下の引き出しからはしまう（地図を広く見せるため）
+  saveSetting("gpsIntroDone", "yes");
+  btnGps.classList.add("hidden");
+  fitPeek();
+});
+btnGpsMenu.addEventListener("click", function () {
+  setMode(mode === "gps" ? "demo" : "gps");
+  saveSetting("gpsIntroDone", "yes");
+  btnGps.classList.add("hidden");
+  fitPeek();
+  closeMenu();
 });
 btnDemo.addEventListener("click", function () {
   setMode("demo");
@@ -1135,6 +1181,7 @@ function selectEditSpot(spot) {
 
 function startEdit() {
   editOn = true;
+  applyFilterToMap(); // 範囲の円を出す
   btnEdit.classList.add("on");
   closeMenu();
   document.body.classList.add("editing"); // 引き出しをしまって、地図を広く使う
@@ -1164,6 +1211,7 @@ function startEdit() {
 
 function stopEdit() {
   editOn = false;
+  applyFilterToMap(); // 範囲の円をしまう
   editSpot = null;
   btnEdit.classList.remove("on");
   editHandles.forEach(function (h) { map.removeLayer(h); });
@@ -1320,7 +1368,8 @@ if ("wakeLock" in navigator) {
 applyDebug();
 applyFilterToMap();
 if (viewFilter === "hidden") listTab = "hidden";
-setMode("demo");
+btnGps.classList.toggle("hidden", loadSetting("gpsIntroDone") === "yes");
+setMode(loadSetting("lastMode") === "gps" ? "gps" : "demo");
 renderList();
 refreshHiddenIcons();
 fitPeek();

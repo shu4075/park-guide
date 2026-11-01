@@ -76,11 +76,12 @@
     <!-- つまみ。タップでも大きさを切り替えられる -->
     <button id="sheet-handle" class="sheet-handle" aria-label="引き出しを広げる"><span></span></button>
 
-    <!-- いつも見えている部分：今の状態と、GPSのスイッチ -->
+    <!-- いつも見えている部分：今の状態と、スイッチ
+         「GPSで歩く」は最初の1回だけここに出し、そのあとは右上のメニュー（≡）に入れる -->
     <div class="sheet-peek">
       <p id="status" class="status">地図をタップすると、そこに「自分」が移動します</p>
       <div class="peek-actions">
-        <button id="btn-gps" class="btn primary gps-btn" aria-pressed="false">GPSで歩く</button>
+        <button id="btn-gps" class="btn primary gps-btn hidden" aria-pressed="false">GPSで歩く</button>
         <!-- 画面を消さないスイッチ（対応している端末だけ表示する） -->
         <button id="btn-screen" class="btn screen-toggle hidden" aria-pressed="false">画面ON：OFF</button>
       </div>
@@ -175,6 +176,11 @@
       <div class="menu-head">
         <h2 id="menu-title">パークさんぽガイド</h2>
         <button id="menu-close" class="close" aria-label="閉じる">×</button>
+      </div>
+
+      <!-- GPS のオン・オフ（最初の1回は下の引き出しにも出す。そのあとはここだけ） -->
+      <div class="menu-tools menu-main">
+        <button id="btn-gps-menu" class="btn primary" aria-pressed="false">GPSで歩く</button>
       </div>
 
       <!-- ネタの投稿（フォームに送ってもらい、確認してから載せる） -->
