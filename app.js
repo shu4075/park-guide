@@ -567,14 +567,25 @@ document.querySelectorAll("#hm-sort button").forEach(function (b) {
 // ---------- 隠れミッキーのスタンプカード ----------
 // スタンプラリーのように、見つけた隠れミッキーの番号の丸にスタンプが押される。
 // 丸をタップすると、その隠れミッキーのヒント（見つけたあとは答え）が読める
+// ふだんは閉じておき（一覧をすぐ見られるように）、見出しをタップすると開く。開いたかどうかは覚えておく
+let stampsOpen = loadSetting("stampsOpen") === "yes";
+
 function renderStampCard(items) {
   const box = document.getElementById("stamp-card");
   box.innerHTML = "";
   // 番号順に並べる（一覧は近い順なので、並べ直す）
   const list = items.slice().sort(function (a, b) { return hmNumber(a.spot) - hmNumber(b.spot); });
   const got = list.filter(function (item) { return found.has(item.spot.id); }).length;
-  box.appendChild(makeEl("p", "stamp-title",
-    (showingSea ? "シー" : "ランド") + "のスタンプ " + got + " / " + list.length));
+  const head = makeEl("button", "stamp-toggle",
+    (showingSea ? "シー" : "ランド") + "のスタンプ " + got + " / " + list.length);
+  head.setAttribute("aria-expanded", stampsOpen ? "true" : "false");
+  head.addEventListener("click", function () {
+    stampsOpen = !stampsOpen;
+    saveSetting("stampsOpen", stampsOpen ? "yes" : "no");
+    renderList();
+  });
+  box.appendChild(head);
+  if (!stampsOpen) return;
   const grid = makeEl("div", "stamp-grid", "");
   list.forEach(function (item) {
     const isFound = found.has(item.spot.id);
